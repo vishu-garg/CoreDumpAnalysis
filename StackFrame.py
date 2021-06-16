@@ -1,0 +1,71 @@
+from pprint import pprint
+from re import sub
+import re
+import subprocess
+
+
+class StackFrame:
+    def __init__(self) -> None:
+        self.threadId=None
+        self.FrameNo=None
+        self.IP= None
+        self.BP= None
+        self.SP= None
+        self.Info= {"Line":None,"File":None,"Function":None}
+        pass
+
+    def getLineFromIP(self,executablePath,coreFilePath):
+        p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        p1.stdin.write(('file '+executablePath+'\n').encode())
+        p1.stdin.write(('core-file '+coreFilePath+'\n').encode())
+        p1.stdin.write(('info line *'+str(self.IP)+'\n').encode())
+        p1.stdin.write(('quit \n').encode())
+        p1.stdin.close()
+
+        flg=0
+        output=""
+
+        while True:
+            line= p1.stdout.readline()
+            if not line:
+                break
+            line=line.decode()
+            if flg==2:
+                continue
+            if flg==1 and line.count("(gdb)")>0:
+                flg=2
+                continue
+
+            if flg==1:
+                output+=line.strip()
+            elif line.count("Line")>0:
+                flg=1
+                x= re.match(r"\(gdb\)\s+(.*)",line).group(1)
+                output+=x.strip()
+            else:
+                continue
+
+        if len(output)==0:
+            # print("Frame is Empty")
+            return
+
+        extractInfoRegEx= r'Line\s+(\d+)\s+of\s+"(.*)".*<(.+)\+.*>'
+
+        x=re.match(extractInfoRegEx,output)
+
+        LineNum=x.group(1)
+        FileName=x.group(2)
+        FunctionName=x.group(3)
+
+        self.Info["Line"]=LineNum
+        self.Info["File"]=FileName
+        self.Info["Function"]=FunctionName
+
+    def printStackFrame(self):
+        print("Thread: ",self.threadId)
+        print("Frame: ",self.FrameNo)
+        print("Instruction Pointer: ",self.IP)
+        print("Base Pointer: ",self.BP)
+        print("Stack Pointer: ",self.SP)    
+        print("At line ",self.Info["Line"]," in file ",self.Info["File"]," on function ",self.Info["Function"]," .")
+        

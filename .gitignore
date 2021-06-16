@@ -1,0 +1,6 @@
+#practise files 
+file1.py
+
+#Extra Files
+__pycache__/
+"*.py[cod]"
