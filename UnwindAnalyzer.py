@@ -16,6 +16,7 @@ addrToStringRegex=r'.*:\s+"(.+)"'
 # threadInfoRegex=r"(\*)?\s+(\d+)\s+Thread\s+0x[\da-f]+\s+\(LWP\s+(\d+)\).*"
 threadInfoRegex=r"(\*)?\s+(\d+)\s+(?:Thread\s+0x[a-f\d]+\s+)?\(?LWP\s+(\d+)\)?\s+.*"
 registerValRegex=r".*\s*\$(\d+)\s+=\s+.*\s+(0x[a-f\d]+).*"
+MAX_FRAMES=30
 
 class UnwindAnalyzer :
     def __init__(self) -> None:
@@ -93,7 +94,7 @@ class UnwindAnalyzer :
         self.systemContext.SystemUpTime="Could not be obtained"
         self.setAuxvFields(Result)
         Result.systemContext=self.systemContext
-        # pprint(self.systemContext.__dict__)
+        pprint(self.systemContext.__dict__)
 
     def getThreads(self):
         p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -157,9 +158,12 @@ class UnwindAnalyzer :
             line= p1.stdout.readline()
             if line:
                 line=line.decode()
-                if line.count("---BackTracingThreadEnd---")>0 or flg==2:
+                if line.count("---BackTracingThreadEnd---")>0 or flg==2 or cnt>=128:
+                    p1.terminate()
                     flg=2
-                    continue
+                    break
+                    # continue
+                # print(line)
                 if flg==1 and re.search(r"#(\d*)",line):
                     cnt+=1
                     # print(line)
@@ -210,6 +214,7 @@ class UnwindAnalyzer :
         numFrames=self.getFrameNum(ThreadId)
         StackFrames=[]
         for frame in range(numFrames):
+            # print('Frame num ',frame)
             CurTrace=self.AnalyzeCurFrame(ThreadId,frame)
             StackFrames.append(CurTrace)
         return StackFrames

@@ -1,3 +1,5 @@
+import os
+import uuid
 from LastEventAnalyzer import LastEventAnalyzer
 from Thread import Thread
 from SystemContext import SystemContext
@@ -14,10 +16,22 @@ class Result:
         self.systemContext=SystemContext()
         self.Threads=[Thread()]
         self.LastEvent=LastEventAnalyzer()
+
+
+        self.ResultID=uuid.uuid4().hex
+        ScriptDir=os.path.dirname(os.path.realpath(__file__))
+        self.ResultPath=ScriptDir+"/Results/"+self.ResultID+"/"
+        
+        if not os.path.exists(ScriptDir+"/Results/"):
+            os.mkdir(ScriptDir+"/Results/")
+        os.mkdir(self.ResultPath)
+
         pass
 
     def printResult(self):
         print("\n\n\n\n\n")
+        print("Result ID: ",self.ResultID)
+        print("Result Path: ",self.ResultPath)
         print("================\n")
 
         print("Directory Path: ",self.directoryPath)
@@ -54,6 +68,55 @@ class Result:
         print("Thread GID: ",self.LastEvent.ThreadGID)
         print(self.LastEvent.SignalDescription)
         print("================\n")
+
+
+    def StoreResult(self,jsondata):
+        ResultFilePath=self.ResultPath+"Results.txt"
+        Resultfile= open(ResultFilePath,"w+")
+        Resultfile.write(jsondata)
+        Resultfile.close()
+
+        print("Analysis Completed...")
+        print("Result is stored at: ",ResultFilePath)
+
+
+
+    #     print("================\n")
+
+    #     print("Directory Path: ",self.directoryPath)
+    #     print("Directory Info: \n")
+    #     print("1)CoreFile= ",self.directoryInfo['CoreFilePath'])
+    #     print("2)Shared Libraries= ",self.directoryInfo['SharedLibPath'])
+    #     print("3)Summary File= ",self.directoryInfo['SummaryFilePath'])
+    #     print("================\n")
+
+    #     print("CoreDump File Info: \n")
+    #     print("1)FileName= ",self.coreDumpInfo["FileName"])
+    #     print("2)FilePath= ",self.coreDumpInfo["FilePath"])
+    #     print("3)FileSize= ",self.coreDumpInfo["FileSize"]," bytes")
+    #     print("================\n")
+
+    #     print("Main Executable FilePath= ",self.ExecutablePath)
+    #     print("================\n")
+
+    #     print("Number of Shared Libraries: ",len(self.Modules))
+    #     for module in self.Modules:
+    #         module.printModule()
+    #         print("*********\n")
+    #     print("================\n")
+
+    #     print("Number of Threads: ",len(self.Threads))
+    #     for thread in self.Threads:
+    #         thread.printThreadInfo()
+    #         print("**********\n")
+    #     print("================\n")
+
+    #     print("Last-Event Information: ")
+    #     print("Thread ID: ",self.LastEvent.ThreadID)
+    #     print("Thread PID: ",self.LastEvent.ThreadPID)
+    #     print("Thread GID: ",self.LastEvent.ThreadGID)
+    #     print(self.LastEvent.SignalDescription)
+    #     print("================\n")
 
 
         

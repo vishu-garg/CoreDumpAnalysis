@@ -1,0 +1,173 @@
+{
+    "directoryPath": "/home/vishu/Desktop/test4/",
+    "directoryInfo": {
+        "SharedLibPath": "/home/vishu/Desktop/test4/sharedlib",
+        "CoreFilePath": "/home/vishu/Desktop/test4/corefile.core",
+        "SummaryFilePath": "/home/vishu/Desktop/test4/summary.txt"
+    },
+    "coreDumpInfo": {
+        "FilePath": "/home/vishu/Desktop/test4/corefile.core",
+        "FileName": "corefile.core",
+        "FileSize": 25829376
+    },
+    "ExecutablePath": "/home/vishu/Desktop/14.out",
+    "Modules": [
+        {
+            "StartAddr": 140550575423488,
+            "EndAddr": 140550576716254,
+            "FilePath": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.25",
+            "LocalPath": "/home/vishu/Desktop/test4/sharedlib/libstdc++.so.6",
+            "FileName": "libstdc++.so.6.0.25",
+            "FileSize": 1594864
+        },
+        {
+            "StartAddr": 140550573199360,
+            "EndAddr": 140550573281777,
+            "FilePath": "/lib/x86_64-linux-gnu/libpthread-2.27.so",
+            "LocalPath": "/home/vishu/Desktop/test4/sharedlib/libpthread.so.0",
+            "FileName": "libpthread-2.27.so",
+            "FileSize": 144976
+        },
+        {
+            "StartAddr": 140550569066496,
+            "EndAddr": 140550570744700,
+            "FilePath": "/lib/x86_64-linux-gnu/libc-2.27.so",
+            "LocalPath": "/home/vishu/Desktop/test4/sharedlib/libc.so.6",
+            "FileName": "libc-2.27.so",
+            "FileSize": 2030928
+        },
+        {
+            "StartAddr": 140550565273600,
+            "EndAddr": 140550566101461,
+            "FilePath": "/lib/x86_64-linux-gnu/libm-2.27.so",
+            "LocalPath": "/home/vishu/Desktop/test4/sharedlib/libm.so.6",
+            "FileName": "libm-2.27.so",
+            "FileSize": 1700792
+        },
+        {
+            "StartAddr": 140550579130368,
+            "EndAddr": 140550579266896,
+            "FilePath": "/lib/x86_64-linux-gnu/ld-2.27.so",
+            "LocalPath": "/home/vishu/Desktop/test4/sharedlib/ld-linux-x86-64.so.2",
+            "FileName": "ld-2.27.so",
+            "FileSize": 179152
+        },
+        {
+            "StartAddr": 140550563078144,
+            "EndAddr": 140550563156845,
+            "FilePath": "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+            "LocalPath": "/home/vishu/Desktop/test4/sharedlib/libgcc_s.so.1",
+            "FileName": "libgcc_s.so.1",
+            "FileSize": 96616
+        }
+    ],
+    "systemContext": {
+        "UID": 1000,
+        "EUID": 1000,
+        "GID": 1000,
+        "EGID": 1000,
+        "PageSize": 4096,
+        "EntryPoint": "0x55f7025f4a30",
+        "BasePlatform": "\\177ELF\\002\\001\\001",
+        "SystemArchitecture": "x86_64",
+        "ProcessArchitecture": "N/A",
+        "SystemUpTime": "Could not be obtained"
+    },
+    "Threads": [
+        {
+            "Id": "1",
+            "PID": "3234",
+            "StackFrames": [
+                {
+                    "threadId": "1",
+                    "FrameNo": 0,
+                    "IP": "0x55f7025f4b7a",
+                    "BP": "0x7fd479626ef0",
+                    "SP": "0x7fd479626ed0",
+                    "Info": {
+                        "Line": "12",
+                        "File": "14.cpp",
+                        "Function": "func3(void*)"
+                    }
+                },
+                {
+                    "threadId": "1",
+                    "FrameNo": 1,
+                    "IP": "0x7fd47afd86db",
+                    "BP": "0x0",
+                    "SP": "0x7fd479626f00",
+                    "Info": {
+                        "Line": "463",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "1",
+                    "FrameNo": 2,
+                    "IP": "0x7fd47ad0171f",
+                    "BP": "0x0",
+                    "SP": "0x7fd479626fc0",
+                    "Info": {
+                        "Line": "97",
+                        "File": "../sysdeps/unix/sysv/linux/x86_64/clone.S",
+                        "Function": "clone"
+                    }
+                }
+            ]
+        },
+        {
+            "Id": "2",
+            "PID": "3232",
+            "StackFrames": [
+                {
+                    "threadId": "2",
+                    "FrameNo": 0,
+                    "IP": "0x55f7025f4c8c",
+                    "BP": "0x7fd47a628ef0",
+                    "SP": "0x7fd47a628e90",
+                    "Info": {
+                        "Line": "40",
+                        "File": "14.cpp",
+                        "Function": "func(void*)"
+                    }
+                },
+                {
+                    "threadId": "2",
+                    "FrameNo": 1,
+                    "IP": "0x7fd47afd86db",
+                    "BP": "0x0",
+                    "SP": "0x7fd47a628f00",
+                    "Info": {
+                        "Line": "463",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "2",
+                    "FrameNo": 2,
+                    "IP": "0x7fd47ad0171f",
+                    "BP": "0x0",
+                    "SP": "0x7fd47a628fc0",
+                    "Info": {
+                        "Line": "97",
+                        "File": "../sysdeps/unix/sysv/linux/x86_64/clone.S",
+                        "Function": "clone"
+                    }
+                }
+            ]
+        }
+    ],
+    "LastEvent": {
+        "ThreadID": "1",
+        "ThreadPID": "3234",
+        "ThreadGID": 3231,
+        "SignalNumber": 11,
+        "SignalAddress": "0x0(NULL)",
+        "SignalErrorNumber": "0",
+        "SignalDescription": "SIGSEGV: Invalid memory reference to address 0x0(NULL)"
+    },
+    "ResultID": "8a51ae69e4094507be8fafeb3bf1cf12",
+    "ResultPath": "/home/vishu/Desktop/Project/Results/8a51ae69e4094507be8fafeb3bf1cf12/"
+}

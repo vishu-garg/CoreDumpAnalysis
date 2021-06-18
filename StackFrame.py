@@ -67,5 +67,6 @@ class StackFrame:
         print("Instruction Pointer: ",self.IP)
         print("Base Pointer: ",self.BP)
         print("Stack Pointer: ",self.SP)    
-        print("At line ",self.Info["Line"]," in file ",self.Info["File"]," on function ",self.Info["Function"]," .")
+        if self.Info["Line"] :
+            print("At line ",self.Info["Line"]," in file ",self.Info["File"]," on function ",self.Info["Function"]," .")
         

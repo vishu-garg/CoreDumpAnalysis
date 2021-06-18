@@ -1,0 +1,443 @@
+{
+    "directoryPath": "/home/vishu/Desktop/Dir1",
+    "directoryInfo": {
+        "SharedLibPath": "/home/vishu/Desktop/Dir1/sharedlib",
+        "CoreFilePath": "/home/vishu/Desktop/Dir1/corefile.core",
+        "SummaryFilePath": "/home/vishu/Desktop/Dir1/summary.txt"
+    },
+    "coreDumpInfo": {
+        "FilePath": "/home/vishu/Desktop/Dir1/corefile.core",
+        "FileName": "corefile.core",
+        "FileSize": 42475520
+    },
+    "ExecutablePath": "/home/vishu/Desktop/1.out",
+    "Modules": [
+        {
+            "StartAddr": 139638187413504,
+            "EndAddr": 139638188706270,
+            "FilePath": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.25",
+            "LocalPath": "/home/vishu/Desktop/Dir1/sharedlib/libstdc++.so.6",
+            "FileName": "libstdc++.so.6.0.25",
+            "FileSize": 1594864
+        },
+        {
+            "StartAddr": 139638185189376,
+            "EndAddr": 139638185271793,
+            "FilePath": "/lib/x86_64-linux-gnu/libpthread-2.27.so",
+            "LocalPath": "/home/vishu/Desktop/Dir1/sharedlib/libpthread.so.0",
+            "FileName": "libpthread-2.27.so",
+            "FileSize": 144976
+        },
+        {
+            "StartAddr": 139638181056512,
+            "EndAddr": 139638182734716,
+            "FilePath": "/lib/x86_64-linux-gnu/libc-2.27.so",
+            "LocalPath": "/home/vishu/Desktop/Dir1/sharedlib/libc.so.6",
+            "FileName": "libc-2.27.so",
+            "FileSize": 2030928
+        },
+        {
+            "StartAddr": 139638177263616,
+            "EndAddr": 139638178091477,
+            "FilePath": "/lib/x86_64-linux-gnu/libm-2.27.so",
+            "LocalPath": "/home/vishu/Desktop/Dir1/sharedlib/libm.so.6",
+            "FileName": "libm-2.27.so",
+            "FileSize": 1700792
+        },
+        {
+            "StartAddr": 139638191120384,
+            "EndAddr": 139638191256912,
+            "FilePath": "/lib/x86_64-linux-gnu/ld-2.27.so",
+            "LocalPath": "/home/vishu/Desktop/Dir1/sharedlib/ld-linux-x86-64.so.2",
+            "FileName": "ld-2.27.so",
+            "FileSize": 179152
+        },
+        {
+            "StartAddr": 139638175068160,
+            "EndAddr": 139638175146861,
+            "FilePath": "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+            "LocalPath": "/home/vishu/Desktop/Dir1/sharedlib/libgcc_s.so.1",
+            "FileName": "libgcc_s.so.1",
+            "FileSize": 96616
+        }
+    ],
+    "systemContext": {
+        "UID": 1000,
+        "EUID": 1000,
+        "GID": 1000,
+        "EGID": 1000,
+        "PageSize": 4096,
+        "EntryPoint": "0x5644c90f2960",
+        "BasePlatform": "\\177ELF\\002\\001\\001",
+        "SystemArchitecture": "x86_64",
+        "ProcessArchitecture": "N/A",
+        "SystemUpTime": "Could not be obtained"
+    },
+    "Threads": [
+        {
+            "Id": "1",
+            "PID": "4130",
+            "StackFrames": [
+                {
+                    "threadId": "1",
+                    "FrameNo": 0,
+                    "IP": "0x5644c90f2acd",
+                    "BP": "0x7f0009d21ef0",
+                    "SP": "0x7f0009d21ed0",
+                    "Info": {
+                        "Line": "17",
+                        "File": "1.cpp",
+                        "Function": "PrintHello(void*)"
+                    }
+                },
+                {
+                    "threadId": "1",
+                    "FrameNo": 1,
+                    "IP": "0x7f000c6d56db",
+                    "BP": "0x0",
+                    "SP": "0x7f0009d21f00",
+                    "Info": {
+                        "Line": "463",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "1",
+                    "FrameNo": 2,
+                    "IP": "0x7f000c3fe71f",
+                    "BP": "0x0",
+                    "SP": "0x7f0009d21fc0",
+                    "Info": {
+                        "Line": "97",
+                        "File": "../sysdeps/unix/sysv/linux/x86_64/clone.S",
+                        "Function": "clone"
+                    }
+                }
+            ]
+        },
+        {
+            "Id": "2",
+            "PID": "4129",
+            "StackFrames": [
+                {
+                    "threadId": "2",
+                    "FrameNo": 0,
+                    "IP": "0x7f000c3fe711",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000a522fb0",
+                    "Info": {
+                        "Line": "78",
+                        "File": "../sysdeps/unix/sysv/linux/x86_64/clone.S",
+                        "Function": "clone"
+                    }
+                },
+                {
+                    "threadId": "2",
+                    "FrameNo": 1,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000a522fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "2",
+                    "FrameNo": 2,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000a522fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "2",
+                    "FrameNo": 3,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000a522fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "2",
+                    "FrameNo": 4,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000a522fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "2",
+                    "FrameNo": 5,
+                    "IP": "0x0",
+                    "BP": "0x0",
+                    "SP": "0x7f000a522fd8",
+                    "Info": {
+                        "Line": null,
+                        "File": null,
+                        "Function": null
+                    }
+                }
+            ]
+        },
+        {
+            "Id": "3",
+            "PID": "4128",
+            "StackFrames": [
+                {
+                    "threadId": "3",
+                    "FrameNo": 0,
+                    "IP": "0x7f000c3fe711",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000ad23fb0",
+                    "Info": {
+                        "Line": "78",
+                        "File": "../sysdeps/unix/sysv/linux/x86_64/clone.S",
+                        "Function": "clone"
+                    }
+                },
+                {
+                    "threadId": "3",
+                    "FrameNo": 1,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000ad23fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "3",
+                    "FrameNo": 2,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000ad23fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "3",
+                    "FrameNo": 3,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000ad23fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "3",
+                    "FrameNo": 4,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000ad23fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "3",
+                    "FrameNo": 5,
+                    "IP": "0x0",
+                    "BP": "0x0",
+                    "SP": "0x7f000ad23fd8",
+                    "Info": {
+                        "Line": null,
+                        "File": null,
+                        "Function": null
+                    }
+                }
+            ]
+        },
+        {
+            "Id": "4",
+            "PID": "4127",
+            "StackFrames": [
+                {
+                    "threadId": "4",
+                    "FrameNo": 0,
+                    "IP": "0x7f000c3fe711",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000b524fb0",
+                    "Info": {
+                        "Line": "78",
+                        "File": "../sysdeps/unix/sysv/linux/x86_64/clone.S",
+                        "Function": "clone"
+                    }
+                },
+                {
+                    "threadId": "4",
+                    "FrameNo": 1,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000b524fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "4",
+                    "FrameNo": 2,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000b524fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "4",
+                    "FrameNo": 3,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000b524fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "4",
+                    "FrameNo": 4,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000b524fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "4",
+                    "FrameNo": 5,
+                    "IP": "0x0",
+                    "BP": "0x0",
+                    "SP": "0x7f000b524fd8",
+                    "Info": {
+                        "Line": null,
+                        "File": null,
+                        "Function": null
+                    }
+                }
+            ]
+        },
+        {
+            "Id": "5",
+            "PID": "4126",
+            "StackFrames": [
+                {
+                    "threadId": "5",
+                    "FrameNo": 0,
+                    "IP": "0x7f000c3fe711",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000bd25fb0",
+                    "Info": {
+                        "Line": "78",
+                        "File": "../sysdeps/unix/sysv/linux/x86_64/clone.S",
+                        "Function": "clone"
+                    }
+                },
+                {
+                    "threadId": "5",
+                    "FrameNo": 1,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000bd25fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "5",
+                    "FrameNo": 2,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000bd25fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "5",
+                    "FrameNo": 3,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000bd25fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "5",
+                    "FrameNo": 4,
+                    "IP": "0x7f000c6d5600",
+                    "BP": "0x7ffccc0940c0",
+                    "SP": "0x7f000bd25fb8",
+                    "Info": {
+                        "Line": "378",
+                        "File": "pthread_create.c",
+                        "Function": "start_thread"
+                    }
+                },
+                {
+                    "threadId": "5",
+                    "FrameNo": 5,
+                    "IP": "0x0",
+                    "BP": "0x0",
+                    "SP": "0x7f000bd25fd8",
+                    "Info": {
+                        "Line": null,
+                        "File": null,
+                        "Function": null
+                    }
+                }
+            ]
+        }
+    ],
+    "LastEvent": {
+        "ThreadID": "1",
+        "ThreadPID": "4130",
+        "ThreadGID": 4125,
+        "SignalNumber": 11,
+        "SignalAddress": "0x0(NULL)",
+        "SignalErrorNumber": "0",
+        "SignalDescription": "SIGSEGV: Invalid memory reference to address 0x0(NULL)"
+    },
+    "ResultID": "77139309b248497d959782865a17bfe8",
+    "ResultPath": "/home/vishu/Desktop/Project/Results/77139309b248497d959782865a17bfe8/"
+}

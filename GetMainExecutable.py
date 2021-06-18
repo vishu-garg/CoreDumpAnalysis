@@ -20,4 +20,5 @@ class GetMainExecutable:
                     print("Err: Executable Path Not valid")
                     sys.exit(2)
             else:
-                print("No match found")
+                print("No match found [Make sure executable file path is given]")
+                sys.exit(2)
