@@ -20,18 +20,18 @@ class SharedLibAnalyzer:
 
         #  Check for GDB error
         if len(gdbErr) != 0:
-            # print('Err while analyzing...')
+            print('Err while analyzing GDB...')
             logErr('Error while analyzing GDB')
             flg=0
             for errs in gdbErr:
-                # print(errs)
+                print(errs)
                 logErr(errs)
                 if errs.count("raise.c")==0:
                     flg=1
             if flg==1:
                 sys.exit(2)
             else:
-                # print('Warning: Ignoring Raise Exception\n')
+                print('Warning: Ignoring Raise Exception\n')
                 logWarning('Ignoring Raise Exception')
 
         #  Extract GDB modules
@@ -62,46 +62,59 @@ class SharedLibAnalyzer:
 
         #  Resolve Symlinks
         for module in modules:
-            p1 = subprocess.Popen(["readlink","-f",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            output=p1.stdout.readline().decode()
-            path=output.strip()
-            module.FilePath=path
-            module.FileName=os.path.basename(path)
+            try:
+                p1 = subprocess.Popen(["readlink","-f",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            except Exception as e:
+                print(e.args[1])
+                logErr(e.args[1])
+                sys.exit(2)
+            else:
+                output=p1.stdout.readline().decode()
+                path=output.strip()
+                module.FilePath=path
+                module.FileName=os.path.basename(path)
 
         # Add backingFiles
         for module in modules:
-            p1 = subprocess.Popen(["readelf","-S",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            output=[]
-            err=[]
-            while True:
-                line=p1.stdout.readline()
-                if line:
-                    line=line.decode()
-                    output.append(line)
-                else:
-                    break
-
-            while True:
-                line= p1.stderr.readline()
-                if line:
-                    line=line.decode()
-                    err.append(line)
-                else:
-                    break
-
-            if len(err)>0:
-                print("Error while reading Shared libreary")
-                for er in err:
-                    print(er)
+            try:
+                p1 = subprocess.Popen(["readelf","-S",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            except Exception as e:
+                print(e.args[1])
+                logErr(e.args[1])
                 sys.exit(2)
-            
-            for line in output:
-                if ".text" in line:
-                    x= re.search(ReadELFSectionRegex,line)
-                    if x:
-                        offset = int(x.group(2),16)
-                        module.StartAddr-=offset
-                        break;
+            else:
+                output=[]
+                err=[]
+                while True:
+                    line=p1.stdout.readline()
+                    if line:
+                        line=line.decode()
+                        output.append(line)
+                    else:
+                        break
+
+                while True:
+                    line= p1.stderr.readline()
+                    if line:
+                        line=line.decode()
+                        err.append(line)
+                    else:
+                        break
+
+                if len(err)>0:
+                    print("Error while reading Shared libreary")
+                    for er in err:
+                        print(er)
+                        logErr(er)
+                    sys.exit(2)
+                
+                for line in output:
+                    if ".text" in line:
+                        x= re.search(ReadELFSectionRegex,line)
+                        if x:
+                            offset = int(x.group(2),16)
+                            module.StartAddr-=offset
+                            break;
             
             
 
@@ -137,11 +150,18 @@ class SharedLibAnalyzer:
         return gdbOutput, gdbErr
 
     def Analyze(self,Result):
-        p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        self.InputGDBCommands(p1,Result)
-        gdbOutput , gdbErr=self.ReadGDBOutput(p1)
-        # print('Analysing GDB output...')
-        self.AnalyzeGDBoutput(gdbOutput,gdbErr,Result)
+        try:
+            p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            self.InputGDBCommands(p1,Result)
+            Exception("error while giving input to GDB")
+        except Exception as e:
+            print(e.args[1])
+            logErr(e.args[1])
+            sys.exit(2)
+        else:   
+            gdbOutput , gdbErr=self.ReadGDBOutput(p1)
+            # print('Analysing GDB output...')
+            self.AnalyzeGDBoutput(gdbOutput,gdbErr,Result)
 
 
         

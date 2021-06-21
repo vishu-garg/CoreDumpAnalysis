@@ -83,8 +83,8 @@ class CoreDumpAnalysis:
         try:
             opts,args = getopt.getopt(argv,"d:")
         except getopt.GetoptError:
-            # print ('Wrong Input Format')
-            # print ('Usage: file.py -d <directory name>')
+            print ('Wrong Input Format')
+            print ('Usage: file.py -d <directory path>')
             logErr('Wrong Input Format')
             return
         flg=0;
@@ -93,13 +93,14 @@ class CoreDumpAnalysis:
                 flg=1
                 DirectoryPath=arg
         if flg==0:
-            # print('Directory path not  specified')
+            print('Directory path not  specified')
+            print ('Usage: file.py -d <directory path>')
             logErr('Directory path not  specified')
             return
         if os.path.exists(DirectoryPath) and os.path.isdir(DirectoryPath):
             directory= self.Get_Dir_Structure(DirectoryPath)
             if(directory==None):
-                # print("Invalid Directory Structure")
+                print("Invalid Directory Structure")
                 logErr("Invalid Directory Structure")
                 return 
             coredump=self.generateCoreDumpFileInfo(directory['CoreFilePath'])
@@ -129,7 +130,7 @@ class CoreDumpAnalysis:
             # self.Result.printResult()
 
             jsondata=json.dumps(self.Result.__dict__,default=lambda o: o.__dict__, indent=4)
-            # print(jsondata)
+            print(jsondata)
 
             self.Result.StoreResult(jsondata)
 
@@ -140,7 +141,7 @@ class CoreDumpAnalysis:
 
         else:
             logErr('Invalid Directory Path')
-            # print ('Invalid Directory Path')
+            print ('Invalid Directory Path')
             sys.exit(2)
 
 
