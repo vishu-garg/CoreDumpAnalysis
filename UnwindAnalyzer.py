@@ -41,6 +41,8 @@ class UnwindAnalyzer :
                 if not line:
                     break
                 line=line.decode()
+                if line.count("raise.c")>0:
+                    continue
                 err.append(line)
 
             if len(err)>0:
@@ -97,6 +99,8 @@ class UnwindAnalyzer :
                 if not line:
                     break
                 line=line.decode()
+                if line.count("raise.c")>0:
+                    continue;
                 err.append(line)
 
             if len(err)>0:

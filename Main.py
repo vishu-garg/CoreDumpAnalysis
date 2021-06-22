@@ -48,7 +48,7 @@ class CoreDumpAnalysis:
         
     def Get_Dir_Structure(self,DirPath):
         dirs = os.listdir(DirPath)
-        if(len(dirs)!=3):
+        if(len(dirs)<3):
             return
         else:
             HasCoreFile=False
