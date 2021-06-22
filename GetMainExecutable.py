@@ -10,9 +10,11 @@ class GetMainExecutable:
         SummaryFilePath = Result.directoryInfo['SummaryFilePath']
         with open(SummaryFilePath) as file:
             line=file.readline()
+            # print(line)
             x=re.search(execPathRegex,line)
             if x:
                 ExecutablePath=x.group(1)
+                # print(ExecutablePath)
                 if  os.path.exists(ExecutablePath) and os.path.isfile(ExecutablePath):
                     print("Executable Path: ",ExecutablePath)
                     Result.ExecutablePath=ExecutablePath

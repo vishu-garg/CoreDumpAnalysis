@@ -124,7 +124,9 @@ class SharedLibAnalyzer:
         return
 
     def InputGDBCommands(self,p1,Result):
-        p1.stdin.write(('file '+Result.ExecutablePath+'\n').encode())
+        # print(Result.ExecutablePath)
+        # print(Result.coreDumpInfo['FilePath'])
+        p1.stdin.write(('file "'+Result.ExecutablePath+'"\n').encode())
         p1.stdin.write(bytes('core-file '+Result.coreDumpInfo['FilePath']+'\n','utf-8'))
         p1.stdin.write(bytes('info sharedlibrary'+'\n','utf-8'))
         p1.stdin.write('quit \n'.encode())

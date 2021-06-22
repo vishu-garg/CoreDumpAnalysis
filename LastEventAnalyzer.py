@@ -1,6 +1,7 @@
 import re
 import subprocess
-
+from ErrorLog import logErr
+import sys
 sigInfoRegex= r"info.si_signo:\s+(\d+)"
 pgrpInfoRegex= r"pgrp:\s+(\d+)"
 signalAddressRegex=r"si_addr\s+=\s+(0x[a-f\d]+)"
@@ -42,10 +43,10 @@ class LastEventAnalyzer:
         
         if signalAddress=="0x0":
             signalAddress+="(NULL)"
-
         return signalAddress,errNo
 
     def SignalNoToCode(self,SignalNumber):
+        # print("Signal Number = ",SignalNumber)
         NumToCode={}
         NumToCode[1]="SIGHUP";
         NumToCode[2]="SIGINT";
@@ -91,34 +92,58 @@ class LastEventAnalyzer:
         self.ThreadID=activeThreadId
         self.ThreadPID=activeThreadPID
 
-        p1= subprocess.Popen(['eu-readelf --notes  '+coreFilePath+' | grep -B 4  "pid: '+activeThreadPID+'"'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-
-        while True:
-            line = p1.stdout.readline()
-            if not line:
-                break
-            line=line.decode()
-            if re.search(sigInfoRegex,line):
-                x=re.search(sigInfoRegex,line)
-                self.SignalNumber=int(x.group(1))
-            if re.search(pgrpInfoRegex,line):
-                x=re.search(pgrpInfoRegex,line)
-                self.ThreadGID=int(x.group(1))
-
-        signalAddress, ErrorNo= self.GetSignalAddressandErrorNo(coreFilePath,executablePath)
-
-        description= self.SignalNoToCode(self.SignalNumber)
-
-        if self.SignalNumber==11:
-            description+=": Invalid memory reference to address "+signalAddress
-        elif self.SignalNumber==4 or self.SignalNumber==8:
-            description+=": Faulty Instruction at address "+signalAddress
+        try:
+            p1= subprocess.Popen(['eu-readelf --notes  "'+coreFilePath+'" | grep -B 4  "pid: '+activeThreadPID+'"'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+        except Exception as e:
+            print(e.args[1])
+            logErr(e.args[1])
+            sys.exit(2)
         else:
-            description+=": (Error Number "+ErrorNo+")"
 
-        self.SignalAddress=signalAddress
-        self.SignalDescription=description
-        self.SignalErrorNumber=ErrorNo
+            err=[]
+
+            while True:
+                line= p1.stderr.readline()
+                if not line:
+                    break
+                line=line.decode()
+                if line.count("raise.c")>0:
+                    continue
+                err.append(line)
+
+            if len(err)>0:
+                print("Error while reading Last event:\n")
+                logErr("Error while reading Last event:\n")
+                for er in err:
+                    print(er)
+                    logErr(er)
+                sys.exit()
+            while True:
+                line = p1.stdout.readline()
+                if not line:
+                    break
+                line=line.decode()
+                if re.search(sigInfoRegex,line):
+                    x=re.search(sigInfoRegex,line)
+                    self.SignalNumber=int(x.group(1))
+                if re.search(pgrpInfoRegex,line):
+                    x=re.search(pgrpInfoRegex,line)
+                    self.ThreadGID=int(x.group(1))
+
+            signalAddress, ErrorNo= self.GetSignalAddressandErrorNo(coreFilePath,executablePath)
+
+            description= self.SignalNoToCode(self.SignalNumber)
+
+            if self.SignalNumber==11:
+                description+=": Invalid memory reference to address "+signalAddress
+            elif self.SignalNumber==4 or self.SignalNumber==8:
+                description+=": Faulty Instruction at address "+signalAddress
+            else:
+                description+=": (Error Number "+ErrorNo+")"
+
+            self.SignalAddress=signalAddress
+            self.SignalDescription=description
+            self.SignalErrorNumber=ErrorNo
 
 
 

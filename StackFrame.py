@@ -1,7 +1,9 @@
 from pprint import pprint
 from re import sub
+import sys
 import re
 import subprocess
+from ErrorLog import logErr
 
 
 class StackFrame:
@@ -15,51 +17,76 @@ class StackFrame:
         pass
 
     def getLineFromIP(self,executablePath,coreFilePath):
-        p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        p1.stdin.write(('file '+executablePath+'\n').encode())
-        p1.stdin.write(('core-file '+coreFilePath+'\n').encode())
-        p1.stdin.write(('info line *'+str(self.IP)+'\n').encode())
-        p1.stdin.write(('quit \n').encode())
-        p1.stdin.close()
+        try:
+            p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        except Exception as e:
+            print(e.args[1])
+            logErr(e.args[1])
+            sys.exit(2)
+        else:
+            p1.stdin.write(('file "'+executablePath+'"\n').encode())
+            p1.stdin.write(('core-file '+coreFilePath+'\n').encode())
+            p1.stdin.write(('info line *'+str(self.IP)+'\n').encode())
+            p1.stdin.write(('quit \n').encode())
+            p1.stdin.close()
 
-        flg=0
-        output=""
+            err=[]
 
-        while True:
-            line= p1.stdout.readline()
-            if not line:
-                break
-            line=line.decode()
-            if flg==2:
-                continue
-            if flg==1 and line.count("(gdb)")>0:
-                flg=2
-                continue
+            while True:
+                line=p1.stderr.readline()
+                if not line:
+                    break;
+                line=line.decode()
+                if line.count("raise.c")>0:
+                    break
+                err.append(line)
 
-            if flg==1:
-                output+=line.strip()
-            elif line.count("Line")>0:
-                flg=1
-                x= re.match(r"\(gdb\)\s+(.*)",line).group(1)
-                output+=x.strip()
-            else:
-                continue
+            if len(err)>0:
+                print("Error extracting Stacktraces....")
+                logErr("Error extracting Stacktraces....")
+                for er in err:
+                    print(er)
+                    logErr(er)
+                sys.exit(2)
 
-        if len(output)==0:
-            # print("Frame is Empty")
-            return
+            flg=0
+            output=""
 
-        extractInfoRegEx= r'Line\s+(\d+)\s+of\s+"(.*)".*<(.+)\+.*>'
+            while True:
+                line= p1.stdout.readline()
+                if not line:
+                    break
+                line=line.decode()
+                if flg==2:
+                    continue
+                if flg==1 and line.count("(gdb)")>0:
+                    flg=2
+                    continue
 
-        x=re.match(extractInfoRegEx,output)
+                if flg==1:
+                    output+=line.strip()
+                elif line.count("Line")>0:
+                    flg=1
+                    x= re.match(r"\(gdb\)\s+(.*)",line).group(1)
+                    output+=x.strip()
+                else:
+                    continue
 
-        LineNum=x.group(1)
-        FileName=x.group(2)
-        FunctionName=x.group(3)
+            if len(output)==0:
+                # print("Frame is Empty")
+                return
 
-        self.Info["Line"]=LineNum
-        self.Info["File"]=FileName
-        self.Info["Function"]=FunctionName
+            extractInfoRegEx= r'Line\s+(\d+)\s+of\s+"(.*)".*<(.+)\+.*>'
+
+            x=re.match(extractInfoRegEx,output)
+
+            LineNum=x.group(1)
+            FileName=x.group(2)
+            FunctionName=x.group(3)
+
+            self.Info["Line"]=LineNum
+            self.Info["File"]=FileName
+            self.Info["Function"]=FunctionName
 
     def printStackFrame(self):
         print("Thread: ",self.threadId)

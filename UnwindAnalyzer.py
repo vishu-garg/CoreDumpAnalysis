@@ -88,7 +88,7 @@ class UnwindAnalyzer :
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('file '+self.executablePath+'\n').encode())
+            p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('x/s '+addr+'\n').encode())
             p1.stdin.close()
@@ -159,7 +159,7 @@ class UnwindAnalyzer :
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('file '+self.executablePath+'\n').encode())
+            p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('echo --> ThreadBegins\n').encode())
             p1.stdin.write(('info threads\n').encode())
@@ -230,7 +230,7 @@ class UnwindAnalyzer :
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('file '+self.executablePath+'\n').encode())
+            p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('thread '+str(id)+'\n').encode())
             p1.stdin.write(('echo ---BackTracingThread--- \n').encode())
@@ -243,7 +243,7 @@ class UnwindAnalyzer :
                 line= p1.stdout.readline()
                 if line:
                     line=line.decode()
-                    if line.count("---BackTracingThreadEnd---")>0 or flg==2 or cnt>=128:
+                    if line.count("---BackTracingThreadEnd---")>0 or flg==2 or cnt>=32:
                         p1.terminate()
                         flg=2
                         break
@@ -274,7 +274,7 @@ class UnwindAnalyzer :
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('file '+self.executablePath+'\n').encode())
+            p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('thread '+str(ThreadId)+'\n').encode())
             p1.stdin.write(('frame '+str(frameNum)+'\n').encode())
@@ -305,7 +305,7 @@ class UnwindAnalyzer :
         numFrames=self.getFrameNum(ThreadId)
         StackFrames=[]
         for frame in range(numFrames):
-            # print('Frame num ',frame)
+            print('Frame num ',frame)
             CurTrace=self.AnalyzeCurFrame(ThreadId,frame)
             StackFrames.append(CurTrace)
         return StackFrames
