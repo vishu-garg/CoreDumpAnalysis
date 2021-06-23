@@ -1,6 +1,7 @@
 from logging import log
 from ErrorLog import logErr,setErrLogger
 from WarningLog import logWarning,setWarningLogger
+from ConsoleLogs import logConsole,setConsoleLogger
 import sys,getopt,os
 import pathlib
 import json
@@ -17,7 +18,13 @@ class CoreDumpAnalysis:
         self.Result=Result()
         setErrLogger(self.Result.ResultPath)
         setWarningLogger(self.Result.ResultPath)
+        setConsoleLogger(self.Result.ResultPath)
         pass
+
+    def isCallbyCMD(self):
+        return self.callByCMD
+    def getResultIdandPath(self):
+        return self.Result.ResultID,self.Result.ResultPath
 
     def generateCoreDumpFileInfo(self,path):
         data = {}
@@ -78,31 +85,37 @@ class CoreDumpAnalysis:
             if HasCoreFile and HasSharedLibDir and HasSummaryFile :
                 return data
 
-    def analyze(self,argv):
-        DirectoryPath=''
-        try:
-            opts,args = getopt.getopt(argv,"d:")
-        except getopt.GetoptError:
-            print ('Wrong Input Format')
-            print ('Usage: file.py -d <directory path>')
-            logErr('Wrong Input Format')
-            return
-        flg=0;
-        for opt,arg in opts:
-            if opt=='-d':
-                flg=1
-                DirectoryPath=arg
-        if flg==0:
-            print('Directory path not  specified')
-            print ('Usage: file.py -d <directory path>')
-            logErr('Directory path not  specified')
-            return
+    def analyze(self,argv,callByCMD):
+        self.callByCMD=callByCMD
+        if callByCMD:
+            DirectoryPath=''
+            try:
+                opts,args = getopt.getopt(argv,"d:")
+            except getopt.GetoptError:
+                # print ('Wrong Input Format')
+                # print ('Usage: file.py -d <directory path>')
+                logErr('Wrong Input Format')
+                logErr('Usage: file.py -d <directory path>')
+                logErr('Wrong Input Format')
+                sys.exit(2)
+            flg=0;
+            for opt,arg in opts:
+                if opt=='-d':
+                    flg=1
+                    DirectoryPath=arg
+            if flg==0:
+                # print('Directory path not  specified')
+                # print ('Usage: file.py -d <directory path>')
+                logErr('Directory path not  specified')
+                sys.exit(2)
+        else:
+            DirectoryPath=argv
         if os.path.exists(DirectoryPath) and os.path.isdir(DirectoryPath):
             directory= self.Get_Dir_Structure(DirectoryPath)
             if(directory==None):
-                print("Invalid Directory Structure")
+                # print("Invalid Directory Structure")
                 logErr("Invalid Directory Structure")
-                return 
+                sys.exit(2) 
             coredump=self.generateCoreDumpFileInfo(directory['CoreFilePath'])
 
             self.Result.directoryInfo=directory
@@ -116,26 +129,34 @@ class CoreDumpAnalysis:
             # print('CoreDump Info: ')
             # pprint(self.Result.coreDumpInfo)
 
-            print('\nExtracting Main Exectuable...')
+            logConsole('Extracting Main Exectuable...\n')
+            # print('\nExtracting Main Exectuable...')
             GetMainExecutable().Analyze(self.Result)
 
-            print('\nRetrieving Shared Libraries...')
+            logConsole('Retrieving Shared Libraries...\n')
+            # print('\nRetrieving Shared Libraries...')
             SharedLibAnalyzer().Analyze(self.Result)
 
             # pprint(self.Result.__dict__)
-
-            print('\nUnwiding Stacktraces...')
+            logConsole('Unwiding Stacktraces...\n')
+            # print('\nUnwiding Stacktraces...')
             UnwindAnalyzer().Analyze(self.Result)
 
             # self.Result.printResult()
 
             jsondata=json.dumps(self.Result.__dict__,default=lambda o: o.__dict__, indent=4)
-            print(jsondata)
+            # print(jsondata)
 
             self.Result.StoreResult(jsondata)
 
-                
-
+            if not callByCMD:
+                return self.Result.ResultID, 201
+            else:
+                logConsole("Analysis Complete...")
+                logConsole("Result is stored at "+self.Result.ResultPath)
+                if callByCMD:
+                    print("Analysis Complete...")
+                    print("Result is stored at "+self.Result.ResultPath)
             
 
 
@@ -148,6 +169,11 @@ class CoreDumpAnalysis:
 
 if __name__ == "__main__":
     CoreDumpAnalyzerObj=CoreDumpAnalysis()
-    CoreDumpAnalyzerObj.analyze(sys.argv[1:])
+    try:
+        CoreDumpAnalyzerObj.analyze(sys.argv[1:],True)
+    except SystemExit:
+        logConsole("Some Error Occurred, Exiting...")
+        resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
+        print("Logs can be viewed at :",resultPath)
 
 

@@ -1,9 +1,11 @@
 import os
 import uuid
+import datetime
 from LastEventAnalyzer import LastEventAnalyzer
 from Thread import Thread
 from SystemContext import SystemContext
 from CD_Module import CD_Module
+
 
 
 class Result:
@@ -16,6 +18,8 @@ class Result:
         self.systemContext=SystemContext()
         self.Threads=[Thread()]
         self.LastEvent=LastEventAnalyzer()
+        self.creationDate=datetime.datetime.now().isoformat()
+        self.suggestions=[]
 
 
         self.ResultID=uuid.uuid4().hex

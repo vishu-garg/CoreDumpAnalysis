@@ -1,3 +1,4 @@
+from ConsoleLogs import logConsole
 from os import system
 from re import sub
 import re
@@ -29,7 +30,7 @@ class UnwindAnalyzer :
         try:
             p1 = subprocess.Popen(["eu-readelf","--note",corefilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
-            print(e.args[1])
+            # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
@@ -46,10 +47,10 @@ class UnwindAnalyzer :
                 err.append(line)
 
             if len(err)>0:
-                print("Error while reading AUXV info:\n")
+                # print("Error while reading AUXV info:\n")
                 logErr("Error while reading AUXV info:\n")
                 for er in err:
-                    print(er)
+                    # print(er)
                     logErr(er)
                 sys.exit()
 
@@ -84,7 +85,7 @@ class UnwindAnalyzer :
         try:
             p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
-            print(e.args[1])
+            # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
@@ -104,10 +105,10 @@ class UnwindAnalyzer :
                 err.append(line)
 
             if len(err)>0:
-                print("Error while getting AUXV fields information at address: "+addr+"\n")
+                # print("Error while getting AUXV fields information at address: "+addr+"\n")
                 logErr("Error while getting AUXV fields information at address: "+addr+"\n")
                 for er in err:
-                    print(er)
+                    # print(er)
                     logErr(er)
                 sys.exit(2)
 
@@ -139,7 +140,7 @@ class UnwindAnalyzer :
             self.systemContext.BasePlatform=self.getStringfromAddr(fields['BASE'])
             self.systemContext.SystemArchitecture=self.getStringfromAddr(fields['PLATFORM'])
         except Exception as e:
-            print("Error no such AUXV fields "+str(e.args))
+            # print("Error no such AUXV fields "+str(e.args))
             logErr("Error no such AUXV fields "+str(e.args))
             sys.exit(2)
         
@@ -149,13 +150,13 @@ class UnwindAnalyzer :
         self.systemContext.SystemUpTime="Could not be obtained"
         self.setAuxvFields(Result)
         Result.systemContext=self.systemContext
-        pprint(self.systemContext.__dict__)
+        # pprint(self.systemContext.__dict__)
 
     def getThreads(self):
         try:
             p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
-            print(e.args[1])
+            # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
@@ -226,7 +227,7 @@ class UnwindAnalyzer :
         try:
             p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
-            print(e.args[1])
+            # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
@@ -270,7 +271,7 @@ class UnwindAnalyzer :
         try:
             p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
-            print(e.args[1])
+            # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
@@ -305,7 +306,8 @@ class UnwindAnalyzer :
         numFrames=self.getFrameNum(ThreadId)
         StackFrames=[]
         for frame in range(numFrames):
-            print('Frame num ',frame)
+            # print('Frame num ',frame)
+            logConsole('Frame num '+str(frame))
             CurTrace=self.AnalyzeCurFrame(ThreadId,frame)
             StackFrames.append(CurTrace)
         return StackFrames
@@ -321,12 +323,14 @@ class UnwindAnalyzer :
         # Unwind Thread Information
         numThreads, ThreadIdsandPIDs, activeThreadId, activeThreadPID=self.getThreads()
 
-        print("Found ",numThreads," threads....")
+        # print("Found ",numThreads," threads....")
+        logConsole("Found "+str(numThreads)+" threads....")
         
         Threads=[]
 
         for threadId,threadPID in ThreadIdsandPIDs:
-            print("Analyzing Thread No.",threadId)
+            # print("Analyzing Thread No.",threadId)
+            logConsole("Analyzing Thread No."+str(threadId))
             stackTraces= self.UnwindCurrentThread(threadId)
             thread = Thread()
             thread.Id=threadId
@@ -340,7 +344,8 @@ class UnwindAnalyzer :
         #     thread.printThreadInfo()
 
         # Analyze Last Event
-        print("Analyzing Last Event...")
+        # print("Analyzing Last Event...")
+        logConsole("Analyzing Last Event...")
         lastEvent=LastEventAnalyzer()
         lastEvent.AnalyzeLastEvent(self.coreFilePath,self.executablePath,activeThreadId,activeThreadPID)
         Result.LastEvent=lastEvent

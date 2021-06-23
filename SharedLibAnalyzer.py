@@ -1,3 +1,4 @@
+from ConsoleLogs import logConsole
 from WarningLog import logWarning
 import re
 import subprocess
@@ -20,18 +21,18 @@ class SharedLibAnalyzer:
 
         #  Check for GDB error
         if len(gdbErr) != 0:
-            print('Err while analyzing GDB...')
+            # print('Err while analyzing GDB...')
             logErr('Error while analyzing GDB')
             flg=0
             for errs in gdbErr:
-                print(errs)
+                # print(errs)
                 logErr(errs)
                 if errs.count("raise.c")==0:
                     flg=1
             if flg==1:
                 sys.exit(2)
             else:
-                print('Warning: Ignoring Raise Exception\n')
+                # print('Warning: Ignoring Raise Exception\n')
                 logWarning('Ignoring Raise Exception')
 
         #  Extract GDB modules
@@ -43,7 +44,8 @@ class SharedLibAnalyzer:
                 startAddr = x.group(1)
                 endAddr = x.group(2)
                 library = x.group(3)
-                print('Shared Library: 0x'+startAddr+' - 0x'+endAddr+': '+library)
+                logConsole('Shared Library: 0x'+startAddr+' - 0x'+endAddr+': '+library)
+                # print('Shared Library: 0x'+startAddr+' - 0x'+endAddr+': '+library)
                 
                 module = CD_Module()
                 StartAddr = int(startAddr,16)
@@ -65,7 +67,7 @@ class SharedLibAnalyzer:
             try:
                 p1 = subprocess.Popen(["readlink","-f",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             except Exception as e:
-                print(e.args[1])
+                # print(e.args[1])
                 logErr(e.args[1])
                 sys.exit(2)
             else:
@@ -79,7 +81,7 @@ class SharedLibAnalyzer:
             try:
                 p1 = subprocess.Popen(["readelf","-S",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             except Exception as e:
-                print(e.args[1])
+                # print(e.args[1])
                 logErr(e.args[1])
                 sys.exit(2)
             else:
@@ -102,9 +104,10 @@ class SharedLibAnalyzer:
                         break
 
                 if len(err)>0:
-                    print("Error while reading Shared libreary")
+                    # print("Error while reading Shared libreary")
+                    logErr("Error while reading Shared libreary")
                     for er in err:
-                        print(er)
+                        # print(er)
                         logErr(er)
                     sys.exit(2)
                 
@@ -157,11 +160,12 @@ class SharedLibAnalyzer:
             self.InputGDBCommands(p1,Result)
             Exception("error while giving input to GDB")
         except Exception as e:
-            print(e.args[1])
+            # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:   
             gdbOutput , gdbErr=self.ReadGDBOutput(p1)
+            logConsole('Analysing GDB output...')
             # print('Analysing GDB output...')
             self.AnalyzeGDBoutput(gdbOutput,gdbErr,Result)
 

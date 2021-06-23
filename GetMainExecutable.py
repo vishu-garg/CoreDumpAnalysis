@@ -1,3 +1,4 @@
+from ConsoleLogs import logConsole
 import re,os,sys
 
 
@@ -16,7 +17,8 @@ class GetMainExecutable:
                 ExecutablePath=x.group(1)
                 # print(ExecutablePath)
                 if  os.path.exists(ExecutablePath) and os.path.isfile(ExecutablePath):
-                    print("Executable Path: ",ExecutablePath)
+                    # print("Executable Path: ",ExecutablePath)
+                    logConsole("Executable Path: "+ExecutablePath+" \n")
                     Result.ExecutablePath=ExecutablePath
                 else:
                     print("Err: Executable Path Not valid")

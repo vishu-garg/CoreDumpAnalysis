@@ -95,7 +95,7 @@ class LastEventAnalyzer:
         try:
             p1= subprocess.Popen(['eu-readelf --notes  "'+coreFilePath+'" | grep -B 4  "pid: '+activeThreadPID+'"'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
         except Exception as e:
-            print(e.args[1])
+            # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
@@ -112,10 +112,10 @@ class LastEventAnalyzer:
                 err.append(line)
 
             if len(err)>0:
-                print("Error while reading Last event:\n")
+                # print("Error while reading Last event:\n")
                 logErr("Error while reading Last event:\n")
                 for er in err:
-                    print(er)
+                    # print(er)
                     logErr(er)
                 sys.exit()
             while True:

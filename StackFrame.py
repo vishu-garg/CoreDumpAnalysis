@@ -20,7 +20,7 @@ class StackFrame:
         try:
             p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
-            print(e.args[1])
+            # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
@@ -42,10 +42,10 @@ class StackFrame:
                 err.append(line)
 
             if len(err)>0:
-                print("Error extracting Stacktraces....")
+                # print("Error extracting Stacktraces....")
                 logErr("Error extracting Stacktraces....")
                 for er in err:
-                    print(er)
+                    # print(er)
                     logErr(er)
                 sys.exit(2)
 
