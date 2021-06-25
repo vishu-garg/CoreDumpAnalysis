@@ -64,12 +64,13 @@ class KNN:
         answers=[]
         for _,row in X_test.iterrows():
             nearest_neighbours=self.GetNeighbours(row["StackFrames"],5)
+            print(nearest_neighbours)
             answers.append(nearest_neighbours)
         return answers
 
 
 if __name__ == '__main__':
-    chunk = pd.read_csv("C:/Users/Hp/Downloads/CoreDumpAnalysis-master (1)/CoreDumpAnalysis-master/ML/temp_dataset.csv", chunksize=1000000,header=0)
+    chunk = pd.read_csv("./temp_dataset.csv", chunksize=1000000,header=0)
     df = pd.concat(chunk)
     X_train, X_test = train_test_split(df, test_size=0.3, random_state=3) # 70% training and 30% test
     print(X_train.head())   

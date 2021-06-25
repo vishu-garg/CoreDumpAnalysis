@@ -6,6 +6,7 @@ from sys import executable
 from typing_extensions import final
 from flask import Flask,request
 from flask_restful import reqparse, abort, Api, Resource
+import requests
 from Main import CoreDumpAnalysis
 
 app = Flask(__name__)
@@ -98,12 +99,75 @@ class StartAnalysis(Resource):
                 shutil.rmtree(tmpDirPath)
 
 
+class Suggest(Resource):
+    def get(self):
+        result_id=request.args.get('id')
+        try:
+            with open("./Results/"+result_id+"/Results.txt",'r') as file:
+                result= json.load(file)
+                StackTrace=""
+                lastThreadId=int(result["LastEvent"]["ThreadID"])
+                result=result["Threads"][lastThreadId-1]["StackFrames"]
+
+                for frame in result:
+                    if not frame["Info"]["Function"]:
+                        continue
+                    if(len(StackTrace)>0):
+                        StackTrace+=" "
+                    StackTrace+=frame["Info"]["Function"]
+                return {"StackTrace": StackTrace},200
+                #TODO: Perform ML on this StackTrace
+        except Exception as e:
+            return {"Error":"Unknown Error"},401
+
+    def post(self):
+        data=request.get_json(force=True)
+        resultID=None
+        suggestion=None
+
+        if "id" in data:
+            resultID=data["id"]
+        if "suggestion" in data:
+            suggestion=data["suggestion"]
+        if not resultID or not suggestion or len(suggestion)==0:
+            return {"Error":"Invalid request parameters"},401
+        try:
+            result=NotImplemented
+            with open("./Results/"+resultID+"/Results.txt",'r') as file:
+                result=json.load(file)
+                suggestion_arr=result["suggestions"]
+                suggestion_arr.append(suggestion)
+                result["suggestions"]=suggestion_arr
+                # if(len(suggestion_arr)==1):
+                     #TODO: Add this coredump into training - dataset as it is having suggestions now
+            if result: 
+                with open("./Results/"+resultID+"/Results.txt",'w') as file:
+                    json_result=json.dumps(result)
+                    file.write(json_result)
+                return {},200
+
+        except Exception as e:
+            print(e.args)
+            return {"Error":"Unknown Error"},401
+                
+class Show_Suggestion(Resource):
+    def get(self):
+        resultId=request.args.get("id")
+        try:
+            with open("./Results/"+resultId+"/Results.txt",'r') as file:
+                result= json.load(file)
+                suggestions=result["suggestions"]
+                return {"suggestions":suggestions},200
+        except Exception as e:
+            return {"Error":"Unknown Error"},401
+
+
 api.add_resource(CoreDump, '/coredump')
 api.add_resource(CoreDumps, '/coredumps')
 api.add_resource(StartAnalysis, '/analyse')
-
+api.add_resource(Suggest, '/suggest')
+api.add_resource(Show_Suggestion,'/showSuggestion')
 #TODO:
-# api.add_resource(None, '/suggest')
 # api.add_resource(None, '/stats')
 
 

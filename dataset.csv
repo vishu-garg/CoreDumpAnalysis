@@ -1,0 +1,11 @@
+StackFrames,SignalNumber,SignalDescription,SystemArch,CreationDate
+main(),11,SIGSEGV: Invalid memory reference to address 0x0(NULL),x86_64,2021-06-24T12:25:49.222111
+main(),11,SIGSEGV: Invalid memory reference to address 0x7f100000000b,x86_64,2021-06-24T12:25:57.649779
+main(),11,SIGSEGV: Invalid memory reference to address 0x0(NULL),x86_64,2021-06-24T12:26:11.358238
+A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int) A(int),11,SIGSEGV: Invalid memory reference to address 0x7ffe431bdff8,x86_64,2021-06-24T12:26:18.269692
+A(int) A(int) A(int) A(int) A(int) main(),11,SIGSEGV: Invalid memory reference to address 0x7f0affffffe7,x86_64,2021-06-24T12:27:05.867908
+A(void*) start_thread clone,11,SIGSEGV: Invalid memory reference to address 0x0(NULL),x86_64,2021-06-24T12:27:18.759974
+B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int) B(int) A(int),11,SIGSEGV: Invalid memory reference to address 0x7ffe97a2dff8,x86_64,2021-06-24T12:27:28.612478
+__GI_raise __GI_abort __libc_message malloc_printerr __GI___libc_free __GI___libc_free main(),6,SIGABRT: (Error Number 0),x86_64,2021-06-24T12:28:15.907413
+__GI_raise __GI_abort __assert_fail_base A(void*) start_thread clone,6,SIGABRT: (Error Number 0),x86_64,2021-06-24T12:28:31.918838
+main(),8,SIGFPE: Faulty Instruction at address 0x56181c7ff750,x86_64,2021-06-24T12:28:47.087083

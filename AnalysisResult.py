@@ -80,8 +80,8 @@ class Result:
         Resultfile.write(jsondata)
         Resultfile.close()
 
-        print("Analysis Completed...")
-        print("Result is stored at: ",ResultFilePath)
+        # print("Analysis Completed...")
+        # print("Result is stored at: ",ResultFilePath)
 
 
 
