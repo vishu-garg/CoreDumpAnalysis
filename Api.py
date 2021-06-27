@@ -6,11 +6,13 @@ import shutil
 from sys import executable
 from typing_extensions import final
 from flask import Flask,request
+from flask_cors import CORS
 from flask_restful import reqparse, abort, Api, Resource
 import requests
 from Main import CoreDumpAnalysis
 
 app = Flask(__name__)
+cors = CORS(app)
 api = Api(app)
 
 parser = reqparse.RequestParser()
@@ -31,17 +33,22 @@ class CoreDumps(Resource):
         if not os.path.exists('./Results/'+resultId+'/Results.txt'):
             return None
         with open('./Results/'+resultId+'/Results.txt', 'r') as file:
-            data = json.load(file)
-            if data["ExecutablePath"] and data["LastEvent"]:
-                res={}
-                res['id']=resultId
-                res['creationDate']=data["creationDate"]
-                res['Executable']=data["ExecutablePath"]
-                res['ErrorDescription']=data["LastEvent"]["SignalDescription"]
-                res['suggestions']=data["suggestions"]
-                return res
-            else:
-                return None
+            try:
+                data = json.load(file)
+                if data["ExecutablePath"] and data["LastEvent"]:
+                    res={}
+                    res['id']=resultId
+                    if "creationDate" in data:
+                        res['creationDate']=data["creationDate"]
+                    res['Executable']=data["ExecutablePath"]
+                    res['ErrorDescription']=data["LastEvent"]["SignalDescription"]
+                    if "suggestions" in data:
+                        res['suggestions']=data["suggestions"]
+                    return res
+                else:
+                    return None
+            except:
+                pass
     
     def get(self):
         resp=[]
