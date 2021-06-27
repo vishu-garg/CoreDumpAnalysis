@@ -99,6 +99,9 @@ class SharedLibAnalyzer:
                     line= p1.stderr.readline()
                     if line:
                         line=line.decode()
+                        if re.match("warning:",line):
+                            logWarning(line)
+                            continue
                         err.append(line)
                     else:
                         break
@@ -149,6 +152,9 @@ class SharedLibAnalyzer:
             line = p1.stderr.readline()
             if line:
                 curline=line.decode()
+                if re.match("warning:",curline):
+                    logWarning(curline)
+                    continue
                 gdbErr.append(curline)
             else:
                 break;

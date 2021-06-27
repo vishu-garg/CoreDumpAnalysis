@@ -1,3 +1,4 @@
+from WarningLog import logWarning
 from ConsoleLogs import logConsole
 from os import system
 from re import sub
@@ -42,6 +43,9 @@ class UnwindAnalyzer :
                 if not line:
                     break
                 line=line.decode()
+                if re.match("warning:",line):
+                    logWarning(line)
+                    continue
                 if line.count("raise.c")>0:
                     continue
                 err.append(line)
@@ -100,6 +104,9 @@ class UnwindAnalyzer :
                 if not line:
                     break
                 line=line.decode()
+                if re.match("warning:",line):
+                    logWarning(line)
+                    continue
                 if line.count("raise.c")>0:
                     continue;
                 err.append(line)
@@ -175,6 +182,7 @@ class UnwindAnalyzer :
             #         break
             #     line=line.decode()
             #     # if re.match("warning:",line):
+                    # logWarning(line)
             #     #     continue
             #     err.append(line)
 

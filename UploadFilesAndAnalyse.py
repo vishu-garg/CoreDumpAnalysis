@@ -1,0 +1,70 @@
+import shutil
+import requests
+import uuid
+from flask import Flask, request, redirect, jsonify
+import os
+from werkzeug.utils import secure_filename
+from flask_restful import reqparse, abort, Api, Resource
+from config import BaseUrl,UPLOAD_FOLDER
+
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'core', 'out'])
+
+def allowed_file(filename):
+	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+class UploadFilesAndAnalyse(Resource):
+    def UploadFile(self,file):
+        if file.filename == '':
+            resp = jsonify({'message' : 'No file selected for uploading'})
+            resp.status_code = 400
+            return resp
+        if file and allowed_file(file.filename):
+            filename=uuid.uuid4().hex
+            filename+= secure_filename(file.filename)
+            file.save(os.path.join(UPLOAD_FOLDER, filename))
+            resp = jsonify({'uploadedFileName' : filename})
+            resp.status_code = 201
+            return resp
+        else:
+            resp = jsonify({'message' : 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
+            resp.status_code = 400
+            return resp
+
+    def analyseFiles(self,corefilePath,executablePath):
+        url=BaseUrl
+        executablePath=os.path.abspath(executablePath)
+        resp = requests.post(
+            url=url+"/analyse",
+            json={
+            'corefilePath':corefilePath,
+            'executablePath':executablePath
+            }
+        )
+        return resp.json(),resp.status_code
+    
+    
+    def post(self):
+        # check if the post request has the file part
+        if 'corefile' not in request.files:
+            resp = jsonify({'message' : 'No corefile part in the request'})
+            resp.status_code = 400
+            return resp
+        corefile = request.files['corefile']
+        resp = self.UploadFile(corefile)
+        if(resp.status_code==400):
+            return resp
+        corefilePath="./Uploads/"+resp.json['uploadedFileName']
+        exeFile= request.files['exefile']
+        resp= self.UploadFile(exeFile)
+        if(resp.status_code==400):
+            return resp
+        executablePath='./Uploads/'+resp.json['uploadedFileName']
+
+        response = self.analyseFiles(corefilePath,executablePath)
+
+        os.remove(corefilePath)
+        os.remove(executablePath)
+
+        return response
+        
+        

@@ -1,3 +1,4 @@
+from WarningLog import logWarning
 from pprint import pprint
 from re import sub
 import sys
@@ -37,6 +38,9 @@ class StackFrame:
                 if not line:
                     break;
                 line=line.decode()
+                if re.match("warning:",line):
+                    logWarning(line)
+                    continue
                 if line.count("raise.c")>0:
                     break
                 err.append(line)

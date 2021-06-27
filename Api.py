@@ -1,3 +1,4 @@
+from UploadFilesAndAnalyse import UploadFilesAndAnalyse
 import os
 import json
 import tempfile
@@ -62,7 +63,7 @@ class StartAnalysis(Resource):
                 return {"resultID":resp},status
             except:
                 resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
-                return ["Error Occurred",resultPath+'/errors.log'],401
+                return ["Error Occurred",resultPath+'errors.log'],401
         else:
             corefilePath=data['corefilePath']
             executablePath=data['executablePath']
@@ -94,7 +95,7 @@ class StartAnalysis(Resource):
                 return {"resultID":resp},status
             except:
                 resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
-                return ["Error Occurred",resultPath+'/errors.log'],401
+                return ["Error Occurred",resultPath+'errors.log'],401
             finally:
                 shutil.rmtree(tmpDirPath)
 
@@ -161,12 +162,12 @@ class Show_Suggestion(Resource):
         except Exception as e:
             return {"Error":"Unknown Error"},401
 
-
 api.add_resource(CoreDump, '/coredump')
 api.add_resource(CoreDumps, '/coredumps')
 api.add_resource(StartAnalysis, '/analyse')
 api.add_resource(Suggest, '/suggest')
 api.add_resource(Show_Suggestion,'/showSuggestion')
+api.add_resource(UploadFilesAndAnalyse,'/uploadfiles')
 #TODO:
 # api.add_resource(None, '/stats')
 

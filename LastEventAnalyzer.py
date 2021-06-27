@@ -1,3 +1,4 @@
+from WarningLog import logWarning
 import re
 import subprocess
 from ErrorLog import logErr
@@ -106,6 +107,9 @@ class LastEventAnalyzer:
                 line= p1.stderr.readline()
                 if not line:
                     break
+                if re.match("warning:",line):
+                    logWarning(line)
+                    continue
                 line=line.decode()
                 if line.count("raise.c")>0:
                     continue
