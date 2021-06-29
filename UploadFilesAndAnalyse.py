@@ -1,7 +1,7 @@
 import shutil
 import requests
 import uuid
-from flask import Flask, request, redirect, jsonify
+from flask import Flask, json, request, redirect, jsonify,make_response
 import os
 from werkzeug.utils import secure_filename
 from flask_restful import reqparse, abort, Api, Resource
@@ -40,25 +40,35 @@ class UploadFilesAndAnalyse(Resource):
             'executablePath':executablePath
             }
         )
-        return resp.json(),resp.status_code
+        response=jsonify(resp.json())
+        response.status_code=resp.status_code
+        return response
     
     
     def post(self):
         # check if the post request has the file part
         if 'corefile' not in request.files:
-            resp = jsonify({'message' : 'No corefile part in the request'})
+            resp = jsonify({'message' : 'No corefile in the request'})
             resp.status_code = 400
             return resp
         corefile = request.files['corefile']
         resp = self.UploadFile(corefile)
         if(resp.status_code==400):
             return resp
-        corefilePath="./Uploads/"+resp.json['uploadedFileName']
+        
+        ScriptDir=os.path.dirname(os.path.realpath(__file__))
+        corefilePath=ScriptDir+"/Uploads/"+resp.json['uploadedFileName']
+        
+        if 'exefile' not in request.files:
+            resp = jsonify({'message' : 'No Executable file in the request'})
+            resp.status_code = 400
+            return resp
+        
         exeFile= request.files['exefile']
         resp= self.UploadFile(exeFile)
         if(resp.status_code==400):
             return resp
-        executablePath='./Uploads/'+resp.json['uploadedFileName']
+        executablePath=ScriptDir+'/Uploads/'+resp.json['uploadedFileName']
 
         response = self.analyseFiles(corefilePath,executablePath)
 

@@ -1,3 +1,5 @@
+from flask import jsonify, make_response
+from werkzeug.wrappers import response
 from UploadFilesAndAnalyse import UploadFilesAndAnalyse
 import os
 import json
@@ -11,6 +13,8 @@ from flask_restful import reqparse, abort, Api, Resource
 import requests
 from Main import CoreDumpAnalysis
 
+from config import RESULT_FOLDER
+
 app = Flask(__name__)
 cors = CORS(app)
 api = Api(app)
@@ -22,17 +26,21 @@ parser.add_argument('executablePath')
 class CoreDump(Resource):
     def get(self):
         coredumpid=request.args.get("id")
-        if os.path.exists('./Results/'+coredumpid+'/Results.txt'):
-             with open('./Results/'+coredumpid+'/Results.txt', 'r') as file:
+        if os.path.exists(RESULT_FOLDER+coredumpid+'/Results.txt'):
+             with open(RESULT_FOLDER+coredumpid+'/Results.txt', 'r') as file:
                 data= json.load(file)
-                return data,201
-        return "Not found", 400
+                resp=jsonify(data)
+                resp.status_code= 201
+                return resp
+        resp=jsonify({"message":"Not found"})
+        resp.status_code=401
+        return resp
 
 class CoreDumps(Resource):
     def getResultDetails(self,resultId):
-        if not os.path.exists('./Results/'+resultId+'/Results.txt'):
+        if not os.path.exists(RESULT_FOLDER+resultId+'/Results.txt'):
             return None
-        with open('./Results/'+resultId+'/Results.txt', 'r') as file:
+        with open(RESULT_FOLDER+resultId+'/Results.txt', 'r') as file:
             try:
                 data = json.load(file)
                 if data["ExecutablePath"] and data["LastEvent"]:
@@ -53,11 +61,13 @@ class CoreDumps(Resource):
     def get(self):
         resp=[]
         cnt=0
-        for result in os.listdir('./Results'):
+        for result in os.listdir(RESULT_FOLDER):
             val=self.getResultDetails(result)
             if val:
                 resp.append(val)
-        return resp, 201
+        response=jsonify(resp)
+        response.status_code=201
+        return response
 
 class StartAnalysis(Resource):
     def post(self):
@@ -67,10 +77,14 @@ class StartAnalysis(Resource):
             CoreDumpAnalyzerObj=CoreDumpAnalysis()
             try:
                 resp, status= CoreDumpAnalyzerObj.analyze(directoryPath,False)
-                return {"resultID":resp},status
+                response=jsonify({"resultID":resp})
+                response.status_code=status
+                return response
             except:
                 resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
-                return ["Error Occurred",resultPath+'errors.log'],401
+                response=jsonify({"message":"Error Occurred","log":resultId+'/errors.log'})
+                response.status_code=401
+                return response
         else:
             corefilePath=data['corefilePath']
             executablePath=data['executablePath']
@@ -79,7 +93,9 @@ class StartAnalysis(Resource):
             bool2= os.path.isfile(executablePath)
 
             if not bool1 or not bool2:
-                return {"Error":"Invalid Arguments"},403
+                response=jsonify({"message":"Invalid Arguments"})
+                response.status_code=401
+                return response
 
             tmpDirPath=tempfile.mkdtemp()
 
@@ -99,10 +115,15 @@ class StartAnalysis(Resource):
             CoreDumpAnalyzerObj=CoreDumpAnalysis()
             try:
                 resp, status= CoreDumpAnalyzerObj.analyze(tmpDirPath,False)
-                return {"resultID":resp},status
+                # print(type(resp))
+                response=jsonify({"resultID":resp})
+                response.status_code=status
+                return response
             except:
                 resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
-                return ["Error Occurred",resultPath+'errors.log'],401
+                response=jsonify({"message":"Error Occurred","log":resultId+'/errors.log'})
+                response.status_code=401
+                return response
             finally:
                 shutil.rmtree(tmpDirPath)
 
@@ -111,7 +132,7 @@ class Suggest(Resource):
     def get(self):
         result_id=request.args.get('id')
         try:
-            with open("./Results/"+result_id+"/Results.txt",'r') as file:
+            with open(RESULT_FOLDER+result_id+"/Results.txt",'r') as file:
                 result= json.load(file)
                 StackTrace=""
                 lastThreadId=int(result["LastEvent"]["ThreadID"])
@@ -123,10 +144,14 @@ class Suggest(Resource):
                     if(len(StackTrace)>0):
                         StackTrace+=" "
                     StackTrace+=frame["Info"]["Function"]
-                return {"StackTrace": StackTrace},200
+                response=jsonify({"StackTrace": StackTrace})
+                response.status_code=201
+                return response
                 #TODO: Perform ML on this StackTrace
         except Exception as e:
-            return {"Error":"Unknown Error"},401
+            response=jsonify({"message":"Unknown Error"})
+            response.status_code=401
+            return response
 
     def post(self):
         data=request.get_json(force=True)
@@ -138,10 +163,12 @@ class Suggest(Resource):
         if "suggestion" in data:
             suggestion=data["suggestion"]
         if not resultID or not suggestion or len(suggestion)==0:
-            return {"Error":"Invalid request parameters"},401
+            response=jsonify({"message":"Invalid request parameters"})
+            response.status_code=401
+            return response
         try:
             result=NotImplemented
-            with open("./Results/"+resultID+"/Results.txt",'r') as file:
+            with open(RESULT_FOLDER+resultID+"/Results.txt",'r') as file:
                 result=json.load(file)
                 suggestion_arr=result["suggestions"]
                 suggestion_arr.append(suggestion)
@@ -149,25 +176,33 @@ class Suggest(Resource):
                 # if(len(suggestion_arr)==1):
                      #TODO: Add this coredump into training - dataset as it is having suggestions now
             if result: 
-                with open("./Results/"+resultID+"/Results.txt",'w') as file:
+                with open(RESULT_FOLDER+resultID+"/Results.txt",'w') as file:
                     json_result=json.dumps(result)
                     file.write(json_result)
-                return {},200
+                response=jsonify({})
+                response.status_code=201
+                return response
 
         except Exception as e:
             print(e.args)
-            return {"Error":"Unknown Error"},401
+            response=jsonify({"message":"Unknown Error"})
+            response.status_code=401
+            return response
                 
 class Show_Suggestion(Resource):
     def get(self):
         resultId=request.args.get("id")
         try:
-            with open("./Results/"+resultId+"/Results.txt",'r') as file:
+            with open(RESULT_FOLDER+resultId+"/Results.txt",'r') as file:
                 result= json.load(file)
                 suggestions=result["suggestions"]
-                return {"suggestions":suggestions},200
+                response=jsonify({"suggestions":suggestions})
+                response.status_code=201
+                return response
         except Exception as e:
-            return {"Error":"Unknown Error"},401
+            response=jsonify({"message":"Unknown Error"})
+            response.status_code(401)
+            return response
 
 api.add_resource(CoreDump, '/coredump')
 api.add_resource(CoreDumps, '/coredumps')
