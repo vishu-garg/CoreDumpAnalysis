@@ -1,5 +1,5 @@
 from levenshtein_distUtil import levenshtein_distUtil
-from knnUtil import KNNUtil
+from KNNUtil import KNNUtil
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
