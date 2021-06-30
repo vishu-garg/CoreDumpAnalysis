@@ -7,7 +7,7 @@ class ClusteringUtil:
     It stores the
     N: signifies the number of dataset values the object has
     doc_freq:list having the frequency of all the functions present in the object
-    word2idx: the map which stores the index of every function/string in doc_freq
+    word2idx: the dict which stores the index of every function/string in doc_freq
     """
 
 
@@ -15,7 +15,7 @@ class ClusteringUtil:
         """ This is used to initialize 
         N =0 :signifying that it has 0 values in it
         doc_freq:as empty list
-        word2idx: as empty map
+        word2idx: as empty dict
         """
         self.N=0
         self.word2idx={}
@@ -42,12 +42,12 @@ class ClusteringUtil:
 
     def transform(self,words):
         """ This function gives the tf and idf value to each frame present in
-        the words and returns the map with frame name as key and value as tf,idf
+        the words and returns the dict with frame name as key and value as tf,idf
 
         words (list) : stackframes list for which tf-idf value is required
         
         Returns:
-        map: returns map having frame name as key and value as tf,idf
+        dict: returns dict having frame name as key and value as tf,idf
         
         """
 
