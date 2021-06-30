@@ -15,10 +15,10 @@ class Cluster:
          and also initaializing the X_train as a pandas.Dataframe and lcp as none
 
         Parameters:
-        NONE
+        None
 
         Returns:
-        NONE
+        None
         
         """   
         self.X_train= pd.DataFrame(columns=['StackFrames', 'SignalDescription', 'SystemArch','CreationDate'])
@@ -37,7 +37,7 @@ class Cluster:
             df(list): New Training value to be used for training the dataset
 
             Returns:
-            NONE        
+            None        
         
         """
         self.X_train=self.X_train.append(df);

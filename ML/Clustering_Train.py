@@ -17,10 +17,10 @@ class Clustering_Train:
   classes and also initaializing the cluster list
   
     Parameters:
-    NONE
+    None
 
     Returns:
-    NONE
+    None
     """  
     self.Cluster_Signatures=ClusteringUtil()
     self.distUtil=levenshtein_distUtil()
@@ -58,7 +58,7 @@ class Clustering_Train:
     row (list): Data entry used for training should have 'StackFrames' value in it
 
     Returns:
-    NONE
+    None
     
     """
     stackTrace=row['StackFrames'].split(" ") #splits the stackframe string to the list
@@ -103,7 +103,7 @@ class Clustering_Train:
     X_train (pandas.Dataframe): Training Dateset used to train the model
 
     Returns:
-    NONE
+    None
     
     """
     for _,row in X_train.iterrows():
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     filehandler= open("model.obj", 'rb') 
     object = pickle.load(filehandler)
     print("loaded")
-    
+
     tmp={"StackFrames":"GitSnippetRepository.java GitSnippetRepository.java EclipseGitSnippetRepository.java Worker.java"}
     #predicting using the loaded model
     print(object.predict(tmp))
