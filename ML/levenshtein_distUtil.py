@@ -1,10 +1,28 @@
 class levenshtein_distUtil:
+    """ This class is the utility created to find the Levenshtein Distance between two stack frames
+    
+    """
 
     def __init__(self) -> None:
 
         pass
 
     def calculate_dist(self,frames1, weights1, frames2, weights2):
+        """ This function finds the Levenshtein Distance between two lists bases upon the given weights
+
+        Parameters:
+        frames1 (list) : List 1 for which Levenshtein Distance to be calculated
+        weights1 (list) : List having weights for the list1
+        frames2 (list) : List 2 for which Levenshtein Distance to be calculated
+        weights2 (list) :  List having weights for the list2
+
+        Returns:
+        float: Levenshtein Distance between the frames1 and frames2
+        
+        """
+
+
+       #initializing the 2D matrix 
         matrix = [[0.0 for _ in range(len(frames1) + 1)] for _ in range(len(frames2) + 1)]
 
         prev_column = matrix[0]

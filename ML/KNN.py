@@ -1,12 +1,12 @@
 from levenshtein_distUtil import levenshtein_distUtil
-from KNNUtil import KNNUtil
+from ClusteringUtil import ClusteringUtil
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
 class KNN:
     def __init__(self) -> None:
         self.X_train=None
-        self.knnUtilObj=KNNUtil()
+        self.knnUtilObj=ClusteringUtil()
         self.levenshtein_distUtilObj=levenshtein_distUtil()
         pass
 
