@@ -203,7 +203,14 @@ class Show_Suggestion(Resource):
             response=jsonify({"message":"Unknown Error"})
             response.status_code(401)
             return response
+class OK_TEST(Resource):
+    def get(self):
+        response = jsonify({"message":"OK"})
+        response.status_code=200
+        return response
 
+
+api.add_resource(OK_TEST, '/')                  #To see if the server is up and running
 api.add_resource(CoreDump, '/coredump')
 api.add_resource(CoreDumps, '/coredumps')
 api.add_resource(StartAnalysis, '/analyse')
