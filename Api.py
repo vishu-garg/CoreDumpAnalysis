@@ -11,7 +11,11 @@ from Main import CoreDumpAnalysis
 import threading
 from config import RESULT_FOLDER
 
-locks={}
+WriteLocks={}
+ReadLocks={}
+ReadCount={}
+
+
 app = Flask(__name__)
 cors = CORS(app)
 api = Api(app)
@@ -170,9 +174,9 @@ class Suggest(Resource):
                 response=jsonify({"message":"Invalid request parameters"})
                 response.status_code=401
                 return response
-            if not resultID in locks:
-                locks[resultID]=threading.Semaphore()
-            lock=locks[resultID]
+            if not resultID in WriteLocks:
+                WriteLocks[resultID]=threading.Semaphore()
+            lock=WriteLocks[resultID]
             while True:
                     lock.acquire()
                     # print("Lock acquired...")
@@ -207,22 +211,47 @@ class Show_Suggestion(Resource):
         try:
             # print("Waiting to work....")
             resultId=request.args.get("id")
-            if not resultId in locks:
-                locks[resultId]=threading.Semaphore()
-            lock=locks[resultId]
-            lock.acquire()
+            if not resultId in ReadLocks:
+                ReadLocks[resultId]=threading.Semaphore()
+            readLock=ReadLocks[resultId]
+            
+            readLock.acquire()
+            if not resultId in ReadCount:
+                ReadCount[resultId]=0
+            ReadCount[resultId]+=1
+            if ReadCount[resultId]==1:
+                if not resultId in WriteLocks:
+                    WriteLocks[resultId]=threading.Semaphore()
+                writeLock=WriteLocks[resultId]
+                writeLock.acquire()
+            readLock.release()
+            
             with open(RESULT_FOLDER+resultId+"/Suggestions.txt",'r') as file:
                 result= json.load(file)
                 suggestions=result["suggestions"]
                 print(len(suggestions),"/n")
                 response=jsonify({"suggestions":suggestions})
                 response.status_code=201
-                lock.release()
+                
+                readLock.acquire()
+                ReadCount[resultId]-=1
+                if ReadCount[resultId]==0:
+                    WriteLocks[resultId].release()
+                readLock.release()
+
                 return response
         except Exception as e:
             response=jsonify({"message":"Unknown Error"})
             response.status_code(401)
-            lock.release()
+            if not resultId:
+                return response
+
+            ReadLocks[resultId].acquire()
+            ReadCount[resultId]-=1
+            if ReadCount[resultId]==0:
+                WriteLocks[resultId].release()
+            ReadLocks[resultId].release()
+
             return response
 class OK_TEST(Resource):
     def get(self):
