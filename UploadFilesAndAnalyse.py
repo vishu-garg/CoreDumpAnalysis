@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from flask_restful import reqparse, abort, Api, Resource
 from config import BaseUrl,UPLOAD_FOLDER
 
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'core', 'out'])
+ALLOWED_EXTENSIONS = set(['core', 'out'])
 
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -26,7 +26,7 @@ class UploadFilesAndAnalyse(Resource):
             resp.status_code = 201
             return resp
         else:
-            resp = jsonify({'message' : 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
+            resp = jsonify({'message' : 'Allowed file types are core, out'})
             resp.status_code = 400
             return resp
 
@@ -51,6 +51,10 @@ class UploadFilesAndAnalyse(Resource):
             resp = jsonify({'message' : 'No corefile in the request'})
             resp.status_code = 400
             return resp
+        if 'exefile' not in request.files:
+            resp = jsonify({'message' : 'No Executable file in the request'})
+            resp.status_code = 400
+            return resp
         corefile = request.files['corefile']
         resp = self.UploadFile(corefile)
         if(resp.status_code==400):
@@ -58,11 +62,6 @@ class UploadFilesAndAnalyse(Resource):
         
         ScriptDir=os.path.dirname(os.path.realpath(__file__))
         corefilePath=ScriptDir+"/Uploads/"+resp.json['uploadedFileName']
-        
-        if 'exefile' not in request.files:
-            resp = jsonify({'message' : 'No Executable file in the request'})
-            resp.status_code = 400
-            return resp
         
         exeFile= request.files['exefile']
         resp= self.UploadFile(exeFile)

@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 import datetime
@@ -19,12 +20,13 @@ class Result:
         self.Threads=[Thread()]
         self.LastEvent=LastEventAnalyzer()
         self.creationDate=datetime.datetime.now().isoformat()
-        self.suggestions=[]
+        # self.suggestions=[]
 
 
-        self.ResultID=uuid.uuid4().hex
+        # self.ResultID=uuid.uuid4().hex
         ScriptDir=os.path.dirname(os.path.realpath(__file__))
-        self.ResultPath=ScriptDir+"/Results/"+self.ResultID+"/"
+        self.ResultID=str(len(os.listdir(ScriptDir+"/Results/"))+1)
+        self.ResultPath=ScriptDir+"/Results/"+str(self.ResultID)+"/"
         
         if not os.path.exists(ScriptDir+"/Results/"):
             os.mkdir(ScriptDir+"/Results/")
@@ -79,6 +81,11 @@ class Result:
         Resultfile= open(ResultFilePath,"w+")
         Resultfile.write(jsondata)
         Resultfile.close()
+
+        SuggestionFilePath=self.ResultPath+"Suggestions.txt"
+        Suggestionfile= open(SuggestionFilePath,"w+")
+        Suggestionfile.write(json.dumps({"suggestions":[]},default=lambda o: o.__dict__, indent=4))
+        Suggestionfile.close()
 
         # print("Analysis Completed...")
         # print("Result is stored at: ",ResultFilePath)
