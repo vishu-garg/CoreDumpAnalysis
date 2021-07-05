@@ -56,7 +56,7 @@ function FileInput({setResponse,setError}){
       <Grid container justify="center" spacing={2}>  
         
         <Grid item sm xs={12}>
-          <input type="file" id="corefile" style={{display:"none"}} onChange={(e)=>{setCorefile(e.target.files[0])}}/>
+          <input type="file" id="corefile" style={{display:"none"}} onChange={(e)=>{setCorefile(e.target.files[0]);setError(null)}}/>
           <label htmlFor="corefile">
             <UploadButton value={"Upload CoreDump file"}/>
           </label>
@@ -68,7 +68,7 @@ function FileInput({setResponse,setError}){
         </Grid>
 
         <Grid item sm xs={12}>
-          <input type="file" id="exefile" style={{display:"none"}} onChange={(e)=>{setExecutableFile(e.target.files[0])}}/>
+          <input type="file" id="exefile" style={{display:"none"}} onChange={(e)=>{setExecutableFile(e.target.files[0]);setError(null)}}/>
           <label htmlFor="exefile">
             <UploadButton value={"Upload Executable file"}/>
           </label>
@@ -78,9 +78,9 @@ function FileInput({setResponse,setError}){
             </Typography>
           }
         </Grid>
-        <Grid item sm xs={12}>
+        {corefile && executableFile && <Grid item sm xs={12}>
               <Button variant="contained" color="secondary" component="span" onClick={handleUpload}>Submit</Button>
-        </Grid>
+        </Grid>}
       </Grid>
 
       {progress!==0 && progress!==100 &&

@@ -22,14 +22,14 @@ const useStyles= makeStyles({
     marginBottom:"10px"
   },
   lastEvent:{
-    fontSize:15,
+    fontWeight:"bold",
     marginBottom:"10px"}
 })
 
 export default function LastEvent({info}){
 
 
-    const [expand,setExpand]=useState(true)
+    const [expand,setExpand]=useState(false)
 
     const classes = useStyles();
 
@@ -53,15 +53,15 @@ export default function LastEvent({info}){
     return(
     
      <Grid container justify="center">
-       <Grid className={classes.root} item xs={12}>
-        <Typography style={{fontSize:20}}><IconButton style={{color:"white"}} onClick={handleClick}><IconUtil/></IconButton>Summary</Typography>
+       <Grid className={classes.root} item xs={12} sm={12}>
+        <Typography style={{fontSize:20}}><IconButton style={{color:"white"}} onClick={handleClick}><IconUtil/></IconButton>Summary: </Typography>
        </Grid>
-       {expand && (<><Grid item xs={12}>
+       {expand && (<><Grid item xs={12} sm={12}>
          <Typography className={classes.lastEvent}>
             Last Event
          </Typography>
        </Grid>
-       <Grid item xs={12}>
+       <Grid item xs={12} sm={12}>
          <TableContainer>
           <Table component={Paper}>
               <TableHead>
