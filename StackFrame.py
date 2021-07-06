@@ -61,6 +61,7 @@ class StackFrame:
                 if not line:
                     break
                 line=line.decode()
+                # print(line)
                 if flg==2:
                     continue
                 if flg==1 and line.count("(gdb)")>0:
@@ -69,7 +70,7 @@ class StackFrame:
 
                 if flg==1:
                     output+=line.strip()
-                elif line.count("Line")>0:
+                elif re.search(r"Line\s+",line):
                     flg=1
                     x= re.match(r"\(gdb\)\s+(.*)",line).group(1)
                     output+=x.strip()
