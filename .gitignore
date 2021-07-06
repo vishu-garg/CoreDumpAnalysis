@@ -1,7 +1,5 @@
 #practise files 
 file1.py
-dataset.csv
-DatasetUtil.py
 
 #Extra Files
 __pycache__/
@@ -9,4 +7,4 @@ __pycache__/
 .vscode
 Results
 Uploads
-ML/Extras
+**/ML/Extras

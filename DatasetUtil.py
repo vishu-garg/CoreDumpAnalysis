@@ -3,6 +3,7 @@ import json
 import csv
 from typing import AnyStr
 import requests
+import time
 
 
 class making_dataset:
@@ -29,6 +30,7 @@ class making_dataset:
             data1['SignalDescription']=data['LastEvent']['SignalDescription']
             data1['SystemArch']=data['systemContext']['SystemArchitecture']
             data1['CreationDate']=data['creationDate']
+            data1['ResultId']=resultId
 
             # print(data1)
 
@@ -72,36 +74,56 @@ class Analyse:
         if not os.path.exists(path):
             return
         
-        fileNum=1
+        fileNum=860
 
-        while True:
-            ExeFilePath=path+'/'+str(fileNum)+'.out'
-            coreFilePath=path+'/core_'+str(fileNum)
-
-            if not os.path.exists(ExeFilePath) or not os.path.isfile(coreFilePath):
-                break
+        while fileNum<998:
             
             fileNum+=1
+            print(fileNum)
+            ExeFilePath=path+"outputs/"+'/'+str(fileNum)+'.out'
+            coreFilePath=path+"cores/"+'/core_'+str(fileNum)+".core"
 
+            if not os.path.exists(ExeFilePath) or not os.path.isfile(coreFilePath):
+                continue
+            
+            
+  
             if not os.path.isfile(ExeFilePath) or not os.path.isfile(coreFilePath):
                 continue
-
+            start=time.time()
             response = self.analyseResult(ExeFilePath,coreFilePath)
-
+                   
             if not response:
                 continue
-
+            end=time.time()
             self.AddCSVObj.add(response)
+            
+            print(f"Runtime of the program is {end - start}")
+            data1={}
+            data1['ResultId']=response
+            data1['Time']=(end-start)
 
+            # print(data1)
 
+            if not os.path.exists('./stats.csv'):
+                data_file = open('stats.csv', 'w')
+                csv_writer = csv.writer(data_file)
+                header = data1.keys()
+                csv_writer.writerow(header)
+                csv_writer.writerow(data1.values())
+                data_file.close()
+            else :
+                with open('stats.csv', 'a') as f_object:
+                     writer_object = csv.writer(f_object)
+                     writer_object.writerow(data1.values())
+                     f_object.close() 
+
+#resultid  time 
 
 
 
 if __name__ == '__main__':
     AnalyseObj=Analyse()
     # AnalyseObj.analyseResult('/home/vishu/Desktop/Dataset/Segmentation Fault/1.out','/home/vishu/Desktop/Dataset/Segmentation Fault/core_1')
-    AnalyseObj.directoryPath("/home/vishu/Desktop/Dataset/Segmentation Fault")
-    AnalyseObj.directoryPath("/home/vishu/Desktop/Dataset/Aborted Fault")
-    AnalyseObj.directoryPath("/home/vishu/Desktop/Dataset/Arithmetic Exceptions")
-    # making_datasetObj=making_dataset()
-    # making_datasetObj.add("936da2a6d4614dd0a40ceb3a16e1ef1f")
+    AnalyseObj.directoryPath("/home/rohit/Desktop/CoreDumpAnalysis-master(2)/CoreDumpAnalysis-master/")
+ 
