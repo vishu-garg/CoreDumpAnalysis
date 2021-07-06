@@ -41,7 +41,7 @@ class StackFrame:
                 if re.match("warning:",line):
                     logWarning(line)
                     continue
-                if line.count("raise.c")>0:
+                if line.count("raise.c")>0 or line.count("No such file or directory")>0:
                     break
                 err.append(line)
 

@@ -111,7 +111,7 @@ class LastEventAnalyzer:
                     logWarning(line)
                     continue
                 line=line.decode()
-                if line.count("raise.c")>0:
+                if line.count("raise.c")>0 or line.count("No such file or directory")>0:
                     continue
                 err.append(line)
 

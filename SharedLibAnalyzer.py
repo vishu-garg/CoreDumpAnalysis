@@ -27,7 +27,7 @@ class SharedLibAnalyzer:
             for errs in gdbErr:
                 # print(errs)
                 logErr(errs)
-                if errs.count("raise.c")==0:
+                if errs.count("raise.c")==0 and errs.count("No such file or directory")==0:
                     flg=1
             if flg==1:
                 sys.exit(2)
