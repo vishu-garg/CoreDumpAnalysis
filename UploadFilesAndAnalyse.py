@@ -46,6 +46,9 @@ class UploadFilesAndAnalyse(Resource):
     
     
     def post(self):
+
+        if not os.path.isdir(UPLOAD_FOLDER):
+            os.mkdir(UPLOAD_FOLDER)
         # check if the post request has the file part
         if 'corefile' not in request.files:
             resp = jsonify({'message' : 'No corefile in the request'})
