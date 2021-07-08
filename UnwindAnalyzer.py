@@ -18,7 +18,7 @@ regex=r"\s*(\w+):\s+(.+)"
 addrToStringRegex=r'.*:\s+"(.+)"'
 # threadInfoRegex=r"(\*)?\s+(\d+)\s+Thread\s+0x[\da-f]+\s+\(LWP\s+(\d+)\).*"
 threadInfoRegex=r"(\*)?\s+(\d+)\s+(?:Thread\s+0x[a-f\d]+\s+)?\(?LWP\s+(\d+)\)?\s+.*"
-registerValRegex=r".*\s*\$(\d+)\s+=\s+.*\s+(0x[a-f\d]+).*"
+registerValRegex=r".*\s*\$(\d+)\s+=\s+.*\s?0?x?[a-f\d]+.*"
 MAX_FRAMES=30
 
 class UnwindAnalyzer :
@@ -42,13 +42,17 @@ class UnwindAnalyzer :
                 line= p1.stderr.readline()
                 if not line:
                     break
-                line=line.decode()
-                if re.match("warning:",line):
-                    logWarning(line)
-                    continue
-                if line.count("raise.c")>0 or line.count("No such file or directory")>0:
-                    continue
-                err.append(line)
+                try:
+                    line=line.decode()
+                except:
+                    pass
+                else:
+                    if re.match("warning:",line):
+                        logWarning(line)
+                        continue
+                    if line.count("raise.c")>0 or line.count("No such file or directory")>0:
+                        continue
+                    err.append(line)
 
             if len(err)>0:
                 # print("Error while reading AUXV info:\n")
@@ -61,18 +65,22 @@ class UnwindAnalyzer :
             flg=0
             while True:
                 line = p1.stdout.readline()
-                line=line.decode()
-                if not line:
-                    break
-                if "CORE" in line and flg==1:
-                    break
-                elif flg==1:
-                    line.strip()
-                    output.append(line)
-                elif "AUXV" in line:
-                    flg=1
+                try:
+                    line=line.decode()
+                except:
+                    pass
                 else:
-                    continue
+                    if not line:
+                        break
+                    if "CORE" in line and flg==1:
+                        break
+                    elif flg==1:
+                        line.strip()
+                        output.append(line)
+                    elif "AUXV" in line:
+                        flg=1
+                    else:
+                        continue
             return output
 
     def getFields(self,auxvInfoOutput):
@@ -87,12 +95,13 @@ class UnwindAnalyzer :
 
     def getStringfromAddr(self,addr):
         try:
-            p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
             # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
+            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
             p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('x/s '+addr+'\n').encode())
@@ -103,13 +112,17 @@ class UnwindAnalyzer :
                 line= p1.stderr.readline()
                 if not line:
                     break
-                line=line.decode()
-                if re.match("warning:",line):
-                    logWarning(line)
-                    continue
-                if line.count("raise.c")>0 or line.count("No such file or directory")>0:
-                    continue;
-                err.append(line)
+                try:
+                    line=line.decode()
+                except:
+                    pass
+                else:
+                    if re.match("warning:",line):
+                        logWarning(line)
+                        continue
+                    if line.count("raise.c")>0 or line.count("No such file or directory")>0:
+                        continue;
+                    err.append(line)
 
             if len(err)>0:
                 # print("Error while getting AUXV fields information at address: "+addr+"\n")
@@ -124,19 +137,27 @@ class UnwindAnalyzer :
             while True:
                 line= p1.stdout.readline()
                 if line:
-                    line=line.decode()
-                    if addr in line:
-                        output=line
+                    try:
+                        line=line.decode()
+                    except:
+                        pass
+                    else:
+                        if addr in line:
+                            output=line
                 else:   
                     break
 
-            x= re.search(addrToStringRegex,output).group(1)
-            return x
+            x1= re.search(addrToStringRegex,output)
+            if x1:
+                x=x1.group(1)
+                return x
+            return "None"
 
     def setAuxvFields(self,Result):
         corefilePath=Result.coreDumpInfo['FilePath']
         auxvInfoOutput=self.getAuxvFromNotes(corefilePath)
         fields=self.getFields(auxvInfoOutput)
+        # print(fields)
         try:
             self.systemContext.UID=int(fields['UID'])
             self.systemContext.EUID=int(fields['EUID'])
@@ -161,12 +182,13 @@ class UnwindAnalyzer :
 
     def getThreads(self):
         try:
-            p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
             # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
+            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
             p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('echo --> ThreadBegins\n').encode())
@@ -202,30 +224,34 @@ class UnwindAnalyzer :
             while True:
                 line=p1.stdout.readline()
                 if line:
-                    line= line.decode()
-                    if line.count("ThreadEnds") >0 or line.count("(Exiting)") or flg==2:
-                        # print(line)
-                        flg=2
-                        continue
-                    if flg==1:
-                        # print(line)
-                        if re.match(threadInfoRegex,line) :
-                            x=re.match(threadInfoRegex,line)
-                            cnt+=1
-                            threadIDandPID=[]
-                            threadId=x.group(2)
-                            threadPID=x.group(3)
-                            threadIDandPID.append(threadId)
-                            threadIDandPID.append(threadPID)
-                            ThreadIdsandPIDs.append(threadIDandPID)
-                            isActive=x.group(1)
-                            if isActive:
-                                activeThreadId=threadId
-                                activeThreadPID=threadPID
-                    elif line.count("ThreadBegins") >0:
-                        flg=1
+                    try:
+                        line=line.decode()
+                    except:
+                        pass
                     else:
-                        continue
+                        if line.count("ThreadEnds") >0 or line.count("(Exiting)") or flg==2:
+                            # print(line)
+                            flg=2
+                            continue
+                        if flg==1:
+                            # print(line)
+                            if re.match(threadInfoRegex,line) :
+                                x=re.match(threadInfoRegex,line)
+                                cnt+=1
+                                threadIDandPID=[]
+                                threadId=x.group(2)
+                                threadPID=x.group(3)
+                                threadIDandPID.append(threadId)
+                                threadIDandPID.append(threadPID)
+                                ThreadIdsandPIDs.append(threadIDandPID)
+                                isActive=x.group(1)
+                                if isActive:
+                                    activeThreadId=threadId
+                                    activeThreadPID=threadPID
+                        elif line.count("ThreadBegins") >0:
+                            flg=1
+                        else:
+                            continue
                 else:
                     break
 
@@ -233,12 +259,13 @@ class UnwindAnalyzer :
 
     def getFrameNum(self,id):
         try:
-            p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
             # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
+            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
             p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('thread '+str(id)+'\n').encode())
@@ -251,23 +278,27 @@ class UnwindAnalyzer :
             while True:
                 line= p1.stdout.readline()
                 if line:
-                    line=line.decode()
-                    if line.count("---BackTracingThreadEnd---")>0 or flg==2 or cnt>=32:
-                        p1.terminate()
-                        flg=2
-                        break
-                        # continue
-                    # print(line)
-                    if flg==1 and re.search(r"#(\d*)",line):
-                        cnt+=1
+                    try:
+                        line=line.decode()
+                    except:
+                        pass
+                    else:
+                        if line.count("---BackTracingThreadEnd---")>0 or flg==2 or cnt>=32:
+                            p1.terminate()
+                            flg=2
+                            break
+                            # continue
                         # print(line)
-                    elif line.count("---BackTracingThread---")>0:
-                        flg=1
-                        if re.search(r"#(\d*)",line):
+                        if flg==1 and re.search(r"#(\d*)",line):
                             cnt+=1
                             # print(line)
-                    else:
-                        continue
+                        elif line.count("---BackTracingThread---")>0:
+                            flg=1
+                            if re.search(r"#(\d*)",line):
+                                cnt+=1
+                                # print(line)
+                        else:
+                            continue
                 else:
                     break
             return cnt
@@ -277,36 +308,49 @@ class UnwindAnalyzer :
         stackFrame.threadId=ThreadId
         stackFrame.FrameNo=frameNum
         try:
-            p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
             # print(e.args[1])
             logErr(e.args[1])
             sys.exit(2)
         else:
+            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
             p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('thread '+str(ThreadId)+'\n').encode())
             p1.stdin.write(('frame '+str(frameNum)+'\n').encode())
-            p1.stdin.write(('p $rip \n').encode())
-            p1.stdin.write(('p $rbp \n').encode())
-            p1.stdin.write(('p $rsp \n').encode())
+            p1.stdin.write(('p $pc \n').encode())
+            p1.stdin.write(('p $x29 \n').encode())
+            p1.stdin.write(('p $sp \n').encode())
             p1.stdin.close()
             while True:
                 line= p1.stdout.readline()
                 if not line:
                     break;
-                line= line.decode()
-                if re.match(registerValRegex,line):
-                    x=re.match(registerValRegex,line)
-                    num_id=x.group(1)
-                    num_val=x.group(2)
-                    # print(num_id,num_val)
-                    if num_id=='1':
-                        stackFrame.IP=num_val
-                    elif num_id=='2':
-                        stackFrame.BP=num_val
-                    elif num_id=='3':
-                        stackFrame.SP=num_val
+                try:
+                    line=line.decode()
+                except:
+                    pass
+                else:
+                    if re.match(registerValRegex,line):
+                        x=re.match(registerValRegex,line)
+                        num_id=x.group(1)
+                        # print(num_id,num_val)
+                        if num_id=='1':
+                            x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+).*",line)
+                            # print(x1.group(2),num_id)
+                            num_val=x1.group(2)
+                            stackFrame.IP=num_val
+                        elif num_id=='2':
+                            x1=re.search(r".*\s*\$(\d+)\s+=\s+(.*)",line)
+                            # print(x1.group(2),num_id)
+                            BP_in_Int=int(x1.group(2))
+                            stackFrame.BP=hex(BP_in_Int)
+                        elif num_id=='3':
+                            # print(x1.group(2),num_id)
+                            x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+).*",line)
+                            num_val=x1.group(2)
+                            stackFrame.SP=num_val
             stackFrame.getLineFromIP(self.executablePath,self.coreFilePath)
             return stackFrame
 

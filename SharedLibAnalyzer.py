@@ -132,6 +132,7 @@ class SharedLibAnalyzer:
     def InputGDBCommands(self,p1,Result):
         # print(Result.ExecutablePath)
         # print(Result.coreDumpInfo['FilePath'])
+        p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
         p1.stdin.write(('file "'+Result.ExecutablePath+'"\n').encode())
         p1.stdin.write(bytes('core-file '+Result.coreDumpInfo['FilePath']+'\n','utf-8'))
         p1.stdin.write(bytes('info sharedlibrary'+'\n','utf-8'))
@@ -141,11 +142,15 @@ class SharedLibAnalyzer:
     def ReadGDBOutput(self,p1):
         gdbOutput=[]
         gdbErr=[]
+        # print(p1.stdout.readlines())
         while True:
             line = p1.stdout.readline()
             if line:
-                curLine=line.decode()
-                gdbOutput.append(curLine)
+                try:
+                    curLine=line.decode()
+                    gdbOutput.append(curLine)
+                except:
+                    pass
             else:
                 break
         while True:
@@ -162,7 +167,7 @@ class SharedLibAnalyzer:
 
     def Analyze(self,Result):
         try:
-            p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             self.InputGDBCommands(p1,Result)
             Exception("error while giving input to GDB")
         except Exception as e:
@@ -174,6 +179,7 @@ class SharedLibAnalyzer:
             logConsole('Analysing GDB output...')
             # print('Analysing GDB output...')
             self.AnalyzeGDBoutput(gdbOutput,gdbErr,Result)
+            print("Done")
 
 
         

@@ -4,9 +4,10 @@ import subprocess
 from ErrorLog import logErr
 import sys
 sigInfoRegex= r"info.si_signo:\s+(\d+)"
+ErroNoRegex= r"info.si_errno:\s+(\d+)"
 pgrpInfoRegex= r"pgrp:\s+(\d+)"
 signalAddressRegex=r"si_addr\s+=\s+(0x[a-f\d]+)"
-errNoRegex=r"si_errno\s+=\s+(\d+)"
+# errNoRegex=r"si_errno\s+=\s+(\d+)"
 
 class LastEventAnalyzer:
     def __init__(self) -> None:
@@ -21,8 +22,9 @@ class LastEventAnalyzer:
 
 
     def GetSignalAddressandErrorNo(self,corefilePath,executablePath):
-        p1=subprocess.Popen(["gdb"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        p1.stdin.write(('file '+executablePath+'\n').encode())
+        p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
+        p1.stdin.write(('file "'+executablePath+'"\n').encode())
         p1.stdin.write(('core-file '+corefilePath+'\n').encode())
         p1.stdin.write(('p $_siginfo \n').encode())
         p1.stdin.close()
@@ -34,14 +36,21 @@ class LastEventAnalyzer:
             line=p1.stdout.readline()
             if not line:
                 break
-            line=line.decode()
-            if re.search(signalAddressRegex,line):
-                x=re.search(signalAddressRegex,line)
-                signalAddress=x.group(1)
-            if re.search(errNoRegex,line):
-                x=re.search(errNoRegex,line)
-                errNo=x.group(1)
+            try:
+                    line=line.decode()
+            except:
+                pass
+            else:
+                if re.search(signalAddressRegex,line):
+                    x=re.search(signalAddressRegex,line)
+                    signalAddress=x.group(1)
+                # if re.search(errNoRegex,line):
+                #     x=re.search(errNoRegex,line)
+                #     errNo=x.group(1)
         
+        if not signalAddress or not errNo:
+            return "Unknown Address","Unknown Error"
+
         if signalAddress=="0x0":
             signalAddress+="(NULL)"
         return signalAddress,errNo
@@ -110,10 +119,14 @@ class LastEventAnalyzer:
                 if re.match("warning:",line):
                     logWarning(line)
                     continue
-                line=line.decode()
-                if line.count("raise.c")>0 or line.count("No such file or directory")>0:
-                    continue
-                err.append(line)
+                try:
+                    line=line.decode()
+                except:
+                    pass
+                else:
+                    if line.count("raise.c")>0 or line.count("No such file or directory")>0:
+                        continue
+                    err.append(line)
 
             if len(err)>0:
                 # print("Error while reading Last event:\n")
@@ -126,15 +139,22 @@ class LastEventAnalyzer:
                 line = p1.stdout.readline()
                 if not line:
                     break
-                line=line.decode()
-                if re.search(sigInfoRegex,line):
-                    x=re.search(sigInfoRegex,line)
-                    self.SignalNumber=int(x.group(1))
-                if re.search(pgrpInfoRegex,line):
-                    x=re.search(pgrpInfoRegex,line)
-                    self.ThreadGID=int(x.group(1))
+                try:
+                    line=line.decode()
+                except:
+                    pass
+                else:
+                    if re.search(sigInfoRegex,line):
+                        x=re.search(sigInfoRegex,line)
+                        self.SignalNumber=int(x.group(1))
+                    if re.search(pgrpInfoRegex,line):
+                        x=re.search(pgrpInfoRegex,line)
+                        self.ThreadGID=int(x.group(1))
+                    if re.search(ErroNoRegex,line):
+                        x=re.search(ErroNoRegex,line)
+                        self.SignalErrorNumber=int(x.group(1))
 
-            signalAddress, ErrorNo= self.GetSignalAddressandErrorNo(coreFilePath,executablePath)
+            errorno,signalAddress = self.GetSignalAddressandErrorNo(coreFilePath,executablePath)
 
             description= self.SignalNoToCode(self.SignalNumber)
 
@@ -143,11 +163,10 @@ class LastEventAnalyzer:
             elif self.SignalNumber==4 or self.SignalNumber==8:
                 description+=": Faulty Instruction at address "+signalAddress
             else:
-                description+=": (Error Number "+ErrorNo+")"
+                description+=": (Error Number "+str(self.SignalErrorNumber)+")"
 
             self.SignalAddress=signalAddress
             self.SignalDescription=description
-            self.SignalErrorNumber=ErrorNo
 
 
 
