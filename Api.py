@@ -10,6 +10,12 @@ from flask_restful import reqparse, abort, Api, Resource
 from Main import CoreDumpAnalysis
 import threading
 from config import RESULT_FOLDER
+from Clustering_Train import Clustering_Train
+from Cluster import Cluster
+from ClusteringUtil import ClusteringUtil
+from levenshtein_distUtil import calculate_dist
+from predict import predict
+from update import update
 
 WriteLocks={}
 ReadLocks={}
@@ -39,7 +45,7 @@ class CoreDump(Resource):
             return resp
         except:
             response=jsonify({"message":"Unknown Error"})
-            response.status_code(401)
+            response.status_code=401
             return response
 
 
@@ -150,8 +156,8 @@ class Suggest(Resource):
                         continue
                     if(len(StackTrace)>0):
                         StackTrace+=" "
-                    StackTrace+=frame["Info"]["Function"]
-                response=jsonify({"StackTrace": StackTrace})
+                    StackTrace+=frame["Info"]["Function"] 
+                response=jsonify({"Results":predict(StackTrace)})
                 response.status_code=201
                 return response
                 #TODO: Perform ML on this StackTrace
@@ -161,11 +167,12 @@ class Suggest(Resource):
             return response
 
     def post(self):
+        lock=None
         try:
             data=request.get_json(force=True)
             resultID=None
             suggestion=None
-
+            print(data)
             if "id" in data:
                 resultID=str(data["id"])
             if "suggestion" in data:
@@ -178,25 +185,29 @@ class Suggest(Resource):
                 WriteLocks[resultID]=threading.Semaphore()
             lock=WriteLocks[resultID]
             while True:
-                    lock.acquire()
-                    # print("Lock acquired...")
-                    result={}
-                    with open(RESULT_FOLDER+resultID+"/Suggestions.txt",'r') as file:
-                        result=json.load(file)
-                        suggestion_arr=result["suggestions"]
-                        suggestion_arr.append(suggestion)
-                        result["suggestions"]=suggestion_arr
-                        # if(len(suggestion_arr)==1):
-                            #TODO: Add this coredump into training - dataset as it is having suggestions now
-                    if result: 
-                        with open(RESULT_FOLDER+resultID+"/Suggestions.txt",'w') as file:
-                            json_result=json.dumps(result,default=lambda o: o.__dict__, indent=4)
-                            file.write(json_result)
-                        response=jsonify({})
-                        response.status_code=201
-                        # print("Lock released...")
-                        lock.release()
-                        return response
+                lock.acquire()
+                # print("Lock acquired...")
+                result={}
+                with open(RESULT_FOLDER+resultID+"/Suggestions.txt",'r') as file:
+                    
+                    result=json.load(file)
+                    suggestion_arr=result["suggestions"]
+                    print(len(suggestion_arr))
+                    if len(suggestion_arr)==0:
+                        update(resultID)
+                        print("updated")
+                        #TODO: Add this coredump into training - dataset as it is having suggestions now
+                    suggestion_arr.append(suggestion)
+                    result["suggestions"]=suggestion_arr
+                if result: 
+                    with open(RESULT_FOLDER+resultID+"/Suggestions.txt",'w') as file:
+                        json_result=json.dumps(result,default=lambda o: o.__dict__, indent=4)
+                        file.write(json_result)
+                    response=jsonify({})
+                    response.status_code=201
+                    # print("Lock released...")
+                    lock.release()
+                    return response
 
         except Exception as e:
             print(e.args)
@@ -209,8 +220,11 @@ class Suggest(Resource):
 class Show_Suggestion(Resource):
     def get(self):
         try:
-            # print("Waiting to work....")
+            print("Waiting to work....")
             resultId=request.args.get("id")
+            print(resultId)
+            if resultId is None:
+                raise Exception
             if not resultId in ReadLocks:
                 ReadLocks[resultId]=threading.Semaphore()
             readLock=ReadLocks[resultId]
@@ -226,7 +240,8 @@ class Show_Suggestion(Resource):
                 writeLock.acquire()
             readLock.release()
             
-            with open(RESULT_FOLDER+resultId+"/Suggestions.txt",'r') as file:
+
+            with open(RESULT_FOLDER+str(resultId)+"/Suggestions.txt",'r') as file:
                 result= json.load(file)
                 suggestions=result["suggestions"]
                 print(len(suggestions),"/n")
@@ -242,10 +257,9 @@ class Show_Suggestion(Resource):
                 return response
         except Exception as e:
             response=jsonify({"message":"Unknown Error"})
-            response.status_code(401)
+            response.status_code=401
             if not resultId:
                 return response
-
             ReadLocks[resultId].acquire()
             ReadCount[resultId]-=1
             if ReadCount[resultId]==0:
