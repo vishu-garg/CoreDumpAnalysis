@@ -11,7 +11,8 @@ from ErrorLog import logErr
 from SystemContext import SystemContext
 from StackFrame import StackFrame
 from Thread import Thread
-from LastEventAnalyzer import LastEventAnalyzer 
+from LastEventAnalyzer import LastEventAnalyzer
+from config import SYS_ROOT 
 
 
 regex=r"\s*(\w+):\s+(.+)"
@@ -101,7 +102,8 @@ class UnwindAnalyzer :
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
+            p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
+            p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
             p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('x/s '+addr+'\n').encode())
@@ -188,7 +190,8 @@ class UnwindAnalyzer :
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
+            p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
+            p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
             p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('echo --> ThreadBegins\n').encode())
@@ -265,7 +268,8 @@ class UnwindAnalyzer :
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
+            p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
+            p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
             p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('thread '+str(id)+'\n').encode())
@@ -314,7 +318,8 @@ class UnwindAnalyzer :
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
+            p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
+            p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
             p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
             p1.stdin.write(('thread '+str(ThreadId)+'\n').encode())
@@ -351,7 +356,7 @@ class UnwindAnalyzer :
                             x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+).*",line)
                             num_val=x1.group(2)
                             stackFrame.SP=num_val
-            stackFrame.getLineFromIP(self.executablePath,self.coreFilePath)
+            stackFrame.getLineFromIP(self.executablePath,self.coreFilePath,self.SharedLibPath)
             return stackFrame
 
     def UnwindCurrentThread(self,ThreadId):
@@ -368,6 +373,7 @@ class UnwindAnalyzer :
     def Analyze(self,Result):
         self.coreFilePath=Result.coreDumpInfo['FilePath']
         self.executablePath=Result.ExecutablePath
+        self.SharedLibPath=Result.directoryInfo["SharedLibPath"]
         
         # Setting Context Fields
         self.setContextFields(Result)
@@ -399,7 +405,7 @@ class UnwindAnalyzer :
         # print("Analyzing Last Event...")
         logConsole("Analyzing Last Event...")
         lastEvent=LastEventAnalyzer()
-        lastEvent.AnalyzeLastEvent(self.coreFilePath,self.executablePath,activeThreadId,activeThreadPID)
+        lastEvent.AnalyzeLastEvent(self.coreFilePath,self.executablePath,self.SharedLibPath,activeThreadId,activeThreadPID)
         Result.LastEvent=lastEvent
         
 

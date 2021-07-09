@@ -7,6 +7,7 @@ import os
 from pprint import pprint
 
 from CD_Module import CD_Module
+from config import SYS_ROOT
 
 from ErrorLog import logErr
 
@@ -132,7 +133,8 @@ class SharedLibAnalyzer:
     def InputGDBCommands(self,p1,Result):
         # print(Result.ExecutablePath)
         # print(Result.coreDumpInfo['FilePath'])
-        p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
+        p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
+        p1.stdin.write(('set solib-search-path '+Result.directoryInfo["SharedLibPath"]+' \n').encode())
         p1.stdin.write(('file "'+Result.ExecutablePath+'"\n').encode())
         p1.stdin.write(bytes('core-file '+Result.coreDumpInfo['FilePath']+'\n','utf-8'))
         p1.stdin.write(bytes('info sharedlibrary'+'\n','utf-8'))

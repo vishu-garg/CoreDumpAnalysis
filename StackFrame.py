@@ -5,6 +5,7 @@ import sys
 import re
 import subprocess
 from ErrorLog import logErr
+from config import SYS_ROOT
 
 
 class StackFrame:
@@ -17,7 +18,7 @@ class StackFrame:
         self.Info= {"Line":None,"File":None,"Function":None}
         pass
 
-    def getLineFromIP(self,executablePath,coreFilePath):
+    def getLineFromIP(self,executablePath,coreFilePath,sharedLibPath):
         try:
             p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         except Exception as e:
@@ -25,7 +26,8 @@ class StackFrame:
             logErr(e.args[1])
             sys.exit(2)
         else:
-            p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
+            p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
+            p1.stdin.write(('set solib-search-path '+sharedLibPath+' \n').encode())
             p1.stdin.write(('file "'+executablePath+'"\n').encode())
             p1.stdin.write(('core-file '+coreFilePath+'\n').encode())
             p1.stdin.write(('info line *'+str(self.IP)+'\n').encode())

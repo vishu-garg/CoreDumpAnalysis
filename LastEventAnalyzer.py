@@ -2,6 +2,7 @@ from WarningLog import logWarning
 import re
 import subprocess
 from ErrorLog import logErr
+from config import SYS_ROOT
 import sys
 sigInfoRegex= r"info.si_signo:\s+(\d+)"
 ErroNoRegex= r"info.si_errno:\s+(\d+)"
@@ -21,9 +22,11 @@ class LastEventAnalyzer:
         pass
 
 
-    def GetSignalAddressandErrorNo(self,corefilePath,executablePath):
+    def GetSignalAddressandErrorNo(self,corefilePath,executablePath,sharedLibPath):
+        # print("IN last event...",sharedLibPath)
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        p1.stdin.write(('set sysroot '+"/usr/aarch64-linux-gnu/"+'\n').encode())
+        p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
+        p1.stdin.write(('set solib-search-path '+sharedLibPath+' \n').encode())
         p1.stdin.write(('file "'+executablePath+'"\n').encode())
         p1.stdin.write(('core-file '+corefilePath+'\n').encode())
         p1.stdin.write(('p $_siginfo \n').encode())
@@ -98,10 +101,9 @@ class LastEventAnalyzer:
         return SignalCode
         
 
-    def AnalyzeLastEvent(self,coreFilePath,executablePath,activeThreadId,activeThreadPID):
+    def AnalyzeLastEvent(self,coreFilePath,executablePath,sharedLibPath,activeThreadId,activeThreadPID):
         self.ThreadID=activeThreadId
         self.ThreadPID=activeThreadPID
-
         try:
             p1= subprocess.Popen(['eu-readelf --notes  "'+coreFilePath+'" | grep -B 4  "pid: '+activeThreadPID+'"'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
         except Exception as e:
@@ -154,7 +156,7 @@ class LastEventAnalyzer:
                         x=re.search(ErroNoRegex,line)
                         self.SignalErrorNumber=int(x.group(1))
 
-            errorno,signalAddress = self.GetSignalAddressandErrorNo(coreFilePath,executablePath)
+            errorno,signalAddress = self.GetSignalAddressandErrorNo(coreFilePath,executablePath,sharedLibPath)
 
             description= self.SignalNoToCode(self.SignalNumber)
 
