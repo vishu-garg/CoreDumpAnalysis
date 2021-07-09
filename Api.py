@@ -16,6 +16,7 @@ from ClusteringUtil import ClusteringUtil
 from levenshtein_distUtil import calculate_dist
 from predict import predict
 from update import update
+from zipfile import ZipFile
 
 WriteLocks={}
 ReadLocks={}
@@ -101,11 +102,13 @@ class StartAnalysis(Resource):
         else:
             corefilePath=data['corefilePath']
             executablePath=data['executablePath']
+            sahredLipZip=data['sharedlib']
 
             bool1= os.path.isfile(corefilePath)
             bool2= os.path.isfile(executablePath)
+            bool3= os.path.isfile(sahredLipZip)
 
-            if not bool1 or not bool2:
+            if not bool1 or not bool2 or not bool3:
                 response=jsonify({"message":"Invalid Arguments"})
                 response.status_code=401
                 return response
@@ -122,7 +125,27 @@ class StartAnalysis(Resource):
             summaryfile.write("executablePath: "+executablePath+'\n')
             summaryfile.close()
 
-            os.mkdir(tmpSharedLibFolder)
+            # os.mkdir(tmpSharedLibFolder)
+            cur_temp_archive_path=""
+            with ZipFile(sahredLipZip, 'r') as zipObj:
+                # zipObj.extractall(tmpSharedLibFolder)
+                for fileinfo in zipObj.infolist():
+                    l=len(fileinfo.filename)
+                    flg=0
+                    new_path="sharedlib"
+                    for i in range(0,l):
+                        if(fileinfo.filename[i]=="/"):
+                            flg=1
+                        if flg==1:
+                            new_path+=fileinfo.filename[i]
+                    fileinfo.filename=new_path
+                    zipObj.extract(fileinfo,tmpDirPath)
+                        
+
+            # for file in tmpDirPath:
+            #     filePath= os.path.join(tmpDirPath,file)
+            #     if(os.path.isdir(filePath)):
+            #         os.rename(filePath,tmpSharedLibFolder)
 
             # print(tmpDirPath)
             CoreDumpAnalyzerObj=CoreDumpAnalysis()
@@ -138,6 +161,7 @@ class StartAnalysis(Resource):
                 response.status_code=401
                 return response
             finally:
+                # print(tmpDirPath)
                 shutil.rmtree(tmpDirPath)
 
 
@@ -160,7 +184,6 @@ class Suggest(Resource):
                 response=jsonify({"Results":predict(StackTrace)})
                 response.status_code=201
                 return response
-                #TODO: Perform ML on this StackTrace
         except Exception as e:
             response=jsonify({"message":"Unknown Error"})
             response.status_code=401
@@ -196,7 +219,6 @@ class Suggest(Resource):
                     if len(suggestion_arr)==0:
                         update(resultID)
                         print("updated")
-                        #TODO: Add this coredump into training - dataset as it is having suggestions now
                     suggestion_arr.append(suggestion)
                     result["suggestions"]=suggestion_arr
                 if result: 

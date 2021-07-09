@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from flask_restful import reqparse, abort, Api, Resource
 from config import BaseUrl,UPLOAD_FOLDER
 
-ALLOWED_EXTENSIONS = set(['core', 'out'])
+ALLOWED_EXTENSIONS = set(['core', 'out', 'zip'])
 
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -26,18 +26,19 @@ class UploadFilesAndAnalyse(Resource):
             resp.status_code = 201
             return resp
         else:
-            resp = jsonify({'message' : 'Allowed file types are core, out'})
+            resp = jsonify({'message' : 'Allowed file types are core, out, zip'})
             resp.status_code = 400
             return resp
 
-    def analyseFiles(self,corefilePath,executablePath):
+    def analyseFiles(self,corefilePath,executablePath,sharedLibpath):
         url=BaseUrl
         executablePath=os.path.abspath(executablePath)
         resp = requests.post(
             url=url+"/analyse",
             json={
             'corefilePath':corefilePath,
-            'executablePath':executablePath
+            'executablePath':executablePath,
+            'sharedlib':sharedLibpath
             }
         )
         response=jsonify(resp.json())
@@ -58,6 +59,12 @@ class UploadFilesAndAnalyse(Resource):
             resp = jsonify({'message' : 'No Executable file in the request'})
             resp.status_code = 400
             return resp
+        if 'sharedlib' not in request.files:
+            resp = jsonify({'message' : 'No SharedLib Zip file in the request'})
+            resp.status_code = 400
+            return resp
+        
+
         corefile = request.files['corefile']
         resp = self.UploadFile(corefile)
         if(resp.status_code==400):
@@ -72,10 +79,17 @@ class UploadFilesAndAnalyse(Resource):
             return resp
         executablePath=ScriptDir+'/Uploads/'+resp.json['uploadedFileName']
 
-        response = self.analyseFiles(corefilePath,executablePath)
+        sharedlib=request.files['sharedlib']
+        resp= self.UploadFile(sharedlib)
+        if(resp.status_code==400):
+            return resp
+        sharedLibPath=ScriptDir+'/Uploads/'+resp.json['uploadedFileName']
+
+        response = self.analyseFiles(corefilePath,executablePath,sharedLibPath)
 
         os.remove(corefilePath)
         os.remove(executablePath)
+        os.remove(sharedLibPath)
 
         return response
         
