@@ -39,14 +39,14 @@ class CoreDump(Resource):
                 with open(RESULT_FOLDER+coredumpid+'/Results.txt', 'r') as file:
                     data= json.load(file)
                     resp=jsonify(data)
-                    resp.status_code= 201
+                    resp.status_code= 200
                     return resp
             resp=jsonify({"message":"Not found"})
-            resp.status_code=401
+            resp.status_code=404
             return resp
         except:
             response=jsonify({"message":"Unknown Error"})
-            response.status_code=401
+            response.status_code=409
             return response
 
 
@@ -80,7 +80,7 @@ class CoreDumps(Resource):
             if val:
                 resp.append(val)
         response=jsonify(resp)
-        response.status_code=201
+        response.status_code=200
         return response
 
 class StartAnalysis(Resource):
@@ -97,7 +97,7 @@ class StartAnalysis(Resource):
             except:
                 resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
                 response=jsonify({"message":"Error Occurred","log":resultId+'/errors.log'})
-                response.status_code=401
+                response.status_code=400
                 return response
         else:
             corefilePath=data['corefilePath']
@@ -110,7 +110,7 @@ class StartAnalysis(Resource):
 
             if not bool1 or not bool2 or not bool3:
                 response=jsonify({"message":"Invalid Arguments"})
-                response.status_code=401
+                response.status_code=400
                 return response
 
             tmpDirPath=tempfile.mkdtemp()
@@ -158,7 +158,7 @@ class StartAnalysis(Resource):
             except:
                 resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
                 response=jsonify({"message":"Error Occurred","log":resultId+'/errors.log'})
-                response.status_code=401
+                response.status_code=409
                 return response
             finally:
                 # print(tmpDirPath)
@@ -182,11 +182,11 @@ class Suggest(Resource):
                         StackTrace+=" "
                     StackTrace+=frame["Info"]["Function"] 
                 response=jsonify({"Results":predict(StackTrace)})
-                response.status_code=201
+                response.status_code=200
                 return response
         except Exception as e:
             response=jsonify({"message":"Unknown Error"})
-            response.status_code=401
+            response.status_code=400
             return response
 
     def post(self):
@@ -202,7 +202,7 @@ class Suggest(Resource):
                 suggestion=data["suggestion"]
             if not resultID or not suggestion or len(suggestion)==0:
                 response=jsonify({"message":"Invalid request parameters"})
-                response.status_code=401
+                response.status_code=400
                 return response
             if not resultID in WriteLocks:
                 WriteLocks[resultID]=threading.Semaphore()
@@ -234,7 +234,7 @@ class Suggest(Resource):
         except Exception as e:
             print(e.args)
             response=jsonify({"message":"Unknown Error"})
-            response.status_code=401
+            response.status_code=400
             print("Lock released...")
             lock.release()
             return response
@@ -268,7 +268,7 @@ class Show_Suggestion(Resource):
                 suggestions=result["suggestions"]
                 print(len(suggestions),"/n")
                 response=jsonify({"suggestions":suggestions})
-                response.status_code=201
+                response.status_code=200
                 
                 readLock.acquire()
                 ReadCount[resultId]-=1
@@ -279,7 +279,7 @@ class Show_Suggestion(Resource):
                 return response
         except Exception as e:
             response=jsonify({"message":"Unknown Error"})
-            response.status_code=401
+            response.status_code=400
             if not resultId:
                 return response
             ReadLocks[resultId].acquire()

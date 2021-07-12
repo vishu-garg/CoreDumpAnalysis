@@ -48,6 +48,8 @@ class UnwindAnalyzer :
                 except:
                     pass
                 else:
+                    if line.strip()=="":
+                        continue
                     if re.match("warning:",line):
                         logWarning(line)
                         continue
@@ -119,6 +121,8 @@ class UnwindAnalyzer :
                 except:
                     pass
                 else:
+                    if line.strip()=="":
+                        continue
                     if re.match("warning:",line):
                         logWarning(line)
                         continue
@@ -206,6 +210,8 @@ class UnwindAnalyzer :
             #     if not line:
             #         break
             #     line=line.decode()
+            #     # if line.strip()=="":
+            #     #             continue
             #     # if re.match("warning:",line):
                     # logWarning(line)
             #     #     continue

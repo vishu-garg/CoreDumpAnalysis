@@ -131,8 +131,8 @@ class SharedLibAnalyzer:
         return
 
     def InputGDBCommands(self,p1,Result):
-        # print(Result.ExecutablePath)
-        # print(Result.coreDumpInfo['FilePath'])
+        # print(Result.directoryInfo["SharedLibPath"])
+        # print(SYS_ROOT)
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+Result.directoryInfo["SharedLibPath"]+' \n').encode())
         p1.stdin.write(('file "'+Result.ExecutablePath+'"\n').encode())
@@ -159,6 +159,8 @@ class SharedLibAnalyzer:
             line = p1.stderr.readline()
             if line:
                 curline=line.decode()
+                if curline.strip()=="":
+                    continue
                 if re.match("warning:",curline):
                     logWarning(curline)
                     continue

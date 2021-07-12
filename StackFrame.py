@@ -45,6 +45,8 @@ class StackFrame:
                 except:
                     pass
                 else:
+                    if line.strip()=="":
+                        continue
                     if re.match("warning:",line):
                         logWarning(line)
                         continue

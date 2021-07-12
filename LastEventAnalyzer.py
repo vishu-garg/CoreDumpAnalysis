@@ -118,6 +118,8 @@ class LastEventAnalyzer:
                 line= p1.stderr.readline()
                 if not line:
                     break
+                if line.strip()=="":
+                    continue
                 if re.match("warning:",line):
                     logWarning(line)
                     continue
