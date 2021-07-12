@@ -9,6 +9,7 @@ function FileInput({setResponse,setError}){
   
   const [corefile,setCorefile] = useState(null)
   const [executableFile,setExecutableFile]=useState(null)
+  const [sharedlibFile,setSharedlibFile]=useState(null)
 
   const [progress, setProgress] = useState(0)
   const [loading,setLoading]=useState(false)
@@ -18,6 +19,7 @@ function FileInput({setResponse,setError}){
     const formdata = new FormData()
     formdata.append("corefile",corefile)
     formdata.append("exefile",executableFile)
+    formdata.append("sharedlib",sharedlibFile)
     setError(null)
     setResponse(null)
     axiosInstance({
@@ -39,12 +41,14 @@ function FileInput({setResponse,setError}){
       setLoading(false) 
       setCorefile(null) 
       setExecutableFile(null)
+      setSharedlibFile(null)
       setResponse(res.resultID)  
     }).catch((err)=>{
     setLoading(false)
     const errObj=err.response ? err.response.data : {'message':'Network Error'}
     setCorefile(null) 
     setExecutableFile(null)
+    setSharedlibFile(null)
     setError(errObj)
     })
   }
@@ -78,7 +82,19 @@ function FileInput({setResponse,setError}){
             </Typography>
           }
         </Grid>
-        {corefile && executableFile && <Grid item sm xs={12}>
+
+        <Grid item sm xs={12}>
+          <input type="file" id="sharedlib" style={{display:"none"}} onChange={(e)=>{setSharedlibFile(e.target.files[0]);setError(null)}}/>
+          <label htmlFor="sharedlib">
+            <UploadButton value={"Upload Sharedlib Zip file"}/>
+          </label>
+          {sharedlibFile && 
+            <Typography variant="subtitle2" style={{color:"red"}}>
+              {sharedlibFile.name}
+            </Typography>
+          }
+        </Grid>
+        {corefile && executableFile && sharedlibFile && <Grid item sm xs={12}>
               <Button variant="contained" color="secondary" component="span" onClick={handleUpload}>Submit</Button>
         </Grid>}
       </Grid>

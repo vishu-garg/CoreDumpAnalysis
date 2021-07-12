@@ -49,7 +49,7 @@ export default function ShowThread({thread, isLastThread=false}){
                                         At Line {frame.Info.Line} in function {frame.Info.Function} of {frame.Info.File}
                                     </TableCell>): 
                                     (<TableCell>
-                                    Stack Overflow
+                                    No debug symbol found
                                     </TableCell>)
                                 }
                                 </TableRow>
