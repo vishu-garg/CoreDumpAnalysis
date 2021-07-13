@@ -102,11 +102,11 @@ class StartAnalysis(Resource):
         else:
             corefilePath=data['corefilePath']
             executablePath=data['executablePath']
-            sahredLipZip=data['sharedlib']
+            sharedLibZip=data['sharedlib']
 
             bool1= os.path.isfile(corefilePath)
             bool2= os.path.isfile(executablePath)
-            bool3= os.path.isfile(sahredLipZip)
+            bool3= os.path.isfile(sharedLibZip)
 
             if not bool1 or not bool2 or not bool3:
                 response=jsonify({"message":"Invalid Arguments"})
@@ -117,7 +117,6 @@ class StartAnalysis(Resource):
 
             tmpcorefilePath=tmpDirPath+'/corefile.core'
             tmpSummaryfilePath=tmpDirPath+'/summary.txt'
-            tmpSharedLibFolder=tmpDirPath+'/sharedlib'
 
             shutil.copyfile(corefilePath,tmpcorefilePath)
 
@@ -125,10 +124,7 @@ class StartAnalysis(Resource):
             summaryfile.write("executablePath: "+executablePath+'\n')
             summaryfile.close()
 
-            # os.mkdir(tmpSharedLibFolder)
-            cur_temp_archive_path=""
-            with ZipFile(sahredLipZip, 'r') as zipObj:
-                # zipObj.extractall(tmpSharedLibFolder)
+            with ZipFile(sharedLibZip, 'r') as zipObj:
                 for fileinfo in zipObj.infolist():
                     l=len(fileinfo.filename)
                     flg=0
@@ -141,13 +137,7 @@ class StartAnalysis(Resource):
                     fileinfo.filename=new_path
                     zipObj.extract(fileinfo,tmpDirPath)
                         
-
-            # for file in tmpDirPath:
-            #     filePath= os.path.join(tmpDirPath,file)
-            #     if(os.path.isdir(filePath)):
-            #         os.rename(filePath,tmpSharedLibFolder)
-
-            # print(tmpDirPath)
+                        
             CoreDumpAnalyzerObj=CoreDumpAnalysis()
             try:
                 resp, status= CoreDumpAnalyzerObj.analyze(tmpDirPath,False)
@@ -185,6 +175,7 @@ class Suggest(Resource):
                 response.status_code=200
                 return response
         except Exception as e:
+            print(e)
             response=jsonify({"message":"Unknown Error"})
             response.status_code=400
             return response
@@ -309,4 +300,4 @@ api.add_resource(UploadFilesAndAnalyse,'/uploadfiles')
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True,host='0.0.0.0')

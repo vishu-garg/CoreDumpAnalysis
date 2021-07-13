@@ -28,13 +28,13 @@ class SharedLibAnalyzer:
             for errs in gdbErr:
                 # print(errs)
                 logErr(errs)
-                if errs.count("raise.c")==0 and errs.count("No such file or directory")==0:
-                    flg=1
-            if flg==1:
-                sys.exit(2)
-            else:
+                # if errs.count("raise.c")==0 and errs.count("No such file or directory")==0:
+                    # flg=1
+            # if flg==1:
+                # sys.exit(2)
+            # else:
                 # print('Warning: Ignoring Raise Exception\n')
-                logWarning('Ignoring Raise Exception')
+                # logWarning('Ignoring Raise Exception')
 
         #  Extract GDB modules
         modules=[]
@@ -65,36 +65,36 @@ class SharedLibAnalyzer:
 
         #  Resolve Symlinks
         for module in modules:
-            try:
-                p1 = subprocess.Popen(["readlink","-f",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            except Exception as e:
+            # try:
+            p1 = subprocess.Popen(["readlink","-f",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            # except Exception as e:
                 # print(e.args[1])
-                logErr(e.args[1])
-                sys.exit(2)
-            else:
-                output=p1.stdout.readline().decode()
-                path=output.strip()
-                module.FilePath=path
-                module.FileName=os.path.basename(path)
+                # logErr(e.args[1])
+                # sys.exit(2)
+            # else:
+            output=p1.stdout.readline().decode()
+            path=output.strip()
+            module.FilePath=path
+            module.FileName=os.path.basename(path)
 
         # Add backingFiles
         for module in modules:
-            try:
-                p1 = subprocess.Popen(["readelf","-S",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            except Exception as e:
+            # try:
+            p1 = subprocess.Popen(["readelf","-S",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            # except Exception as e:
                 # print(e.args[1])
-                logErr(e.args[1])
-                sys.exit(2)
-            else:
-                output=[]
-                err=[]
-                while True:
-                    line=p1.stdout.readline()
-                    if line:
-                        line=line.decode()
-                        output.append(line)
-                    else:
-                        break
+                # logErr(e.args[1])
+                # sys.exit(2)
+            # else:
+            output=[]
+            err=[]
+            while True:
+                line=p1.stdout.readline()
+                if line:
+                    line=line.decode()
+                    output.append(line)
+                else:
+                    break
 
                 while True:
                     line= p1.stderr.readline()
@@ -107,13 +107,13 @@ class SharedLibAnalyzer:
                     else:
                         break
 
-                if len(err)>0:
-                    # print("Error while reading Shared libreary")
-                    logErr("Error while reading Shared libreary")
-                    for er in err:
-                        # print(er)
-                        logErr(er)
-                    sys.exit(2)
+                # if len(err)>0:
+                #     # print("Error while reading Shared libreary")
+                #     logErr("Error while reading Shared libreary")
+                #     for er in err:
+                #         # print(er)
+                #         logErr(er)
+                #     sys.exit(2)
                 
                 for line in output:
                     if ".text" in line:
@@ -170,20 +170,20 @@ class SharedLibAnalyzer:
         return gdbOutput, gdbErr
 
     def Analyze(self,Result):
-        try:
-            p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            self.InputGDBCommands(p1,Result)
-            Exception("error while giving input to GDB")
-        except Exception as e:
-            # print(e.args[1])
-            logErr(e.args[1])
-            sys.exit(2)
-        else:   
-            gdbOutput , gdbErr=self.ReadGDBOutput(p1)
-            logConsole('Analysing GDB output...')
-            # print('Analysing GDB output...')
-            self.AnalyzeGDBoutput(gdbOutput,gdbErr,Result)
-            print("Done")
+        # try:
+        p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        self.InputGDBCommands(p1,Result)
+            # Exception("error while giving input to GDB")
+        # except Exception as e:
+        #     # print(e.args[1])
+        #     logErr(e.args[1])
+        #     sys.exit(2)
+        # else:   
+        gdbOutput , gdbErr=self.ReadGDBOutput(p1)
+        logConsole('Analysing GDB output...')
+        # print('Analysing GDB output...')
+        self.AnalyzeGDBoutput(gdbOutput,gdbErr,Result)
+        print("Done")
 
 
         

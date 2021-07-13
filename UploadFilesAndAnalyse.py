@@ -13,20 +13,22 @@ def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 class UploadFilesAndAnalyse(Resource):
-    def UploadFile(self,file):
+    def UploadFile(self,file,ext):
         if file.filename == '':
             resp = jsonify({'message' : 'No file selected for uploading'})
             resp.status_code = 400
             return resp
-        if file and allowed_file(file.filename):
+        # if file and allowed_file(file.filename):
+        if file:
             filename=uuid.uuid4().hex
             filename+= secure_filename(file.filename)
+            filename+=ext
             file.save(os.path.join(UPLOAD_FOLDER, filename))
             resp = jsonify({'uploadedFileName' : filename})
             resp.status_code = 201
             return resp
         else:
-            resp = jsonify({'message' : 'Allowed file types are core, out, zip'})
+            resp = jsonify({'message' : 'Unkown File type'})
             resp.status_code = 400
             return resp
 
@@ -66,7 +68,7 @@ class UploadFilesAndAnalyse(Resource):
         
 
         corefile = request.files['corefile']
-        resp = self.UploadFile(corefile)
+        resp = self.UploadFile(corefile,".core")
         if(resp.status_code==400):
             return resp
         
@@ -74,13 +76,13 @@ class UploadFilesAndAnalyse(Resource):
         corefilePath=ScriptDir+"/Uploads/"+resp.json['uploadedFileName']
         
         exeFile= request.files['exefile']
-        resp= self.UploadFile(exeFile)
+        resp= self.UploadFile(exeFile,".out")
         if(resp.status_code==400):
             return resp
         executablePath=ScriptDir+'/Uploads/'+resp.json['uploadedFileName']
 
         sharedlib=request.files['sharedlib']
-        resp= self.UploadFile(sharedlib)
+        resp= self.UploadFile(sharedlib,"")
         if(resp.status_code==400):
             return resp
         sharedLibPath=ScriptDir+'/Uploads/'+resp.json['uploadedFileName']

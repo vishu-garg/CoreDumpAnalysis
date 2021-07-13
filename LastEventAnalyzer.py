@@ -104,73 +104,73 @@ class LastEventAnalyzer:
     def AnalyzeLastEvent(self,coreFilePath,executablePath,sharedLibPath,activeThreadId,activeThreadPID):
         self.ThreadID=activeThreadId
         self.ThreadPID=activeThreadPID
-        try:
-            p1= subprocess.Popen(['eu-readelf --notes  "'+coreFilePath+'" | grep -B 4  "pid: '+activeThreadPID+'"'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-        except Exception as e:
-            # print(e.args[1])
-            logErr(e.args[1])
-            sys.exit(2)
-        else:
+        # try:
+        p1= subprocess.Popen(['eu-readelf --notes  "'+coreFilePath+'" | grep -B 4  "pid: '+activeThreadPID+'"'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+        # except Exception as e:
+        #     # print(e.args[1])
+        #     logErr(e.args[1])
+        #     sys.exit(2)
+        # else:
 
-            err=[]
+        err=[]
 
-            while True:
-                line= p1.stderr.readline()
-                if not line:
-                    break
-                if line.strip()=="":
-                    continue
-                if re.match("warning:",line):
-                    logWarning(line)
-                    continue
-                try:
-                    line=line.decode()
-                except:
-                    pass
-                else:
-                    if line.count("raise.c")>0 or line.count("No such file or directory")>0:
-                        continue
-                    err.append(line)
-
-            if len(err)>0:
-                # print("Error while reading Last event:\n")
-                logErr("Error while reading Last event:\n")
-                for er in err:
-                    # print(er)
-                    logErr(er)
-                sys.exit()
-            while True:
-                line = p1.stdout.readline()
-                if not line:
-                    break
-                try:
-                    line=line.decode()
-                except:
-                    pass
-                else:
-                    if re.search(sigInfoRegex,line):
-                        x=re.search(sigInfoRegex,line)
-                        self.SignalNumber=int(x.group(1))
-                    if re.search(pgrpInfoRegex,line):
-                        x=re.search(pgrpInfoRegex,line)
-                        self.ThreadGID=int(x.group(1))
-                    if re.search(ErroNoRegex,line):
-                        x=re.search(ErroNoRegex,line)
-                        self.SignalErrorNumber=int(x.group(1))
-
-            errorno,signalAddress = self.GetSignalAddressandErrorNo(coreFilePath,executablePath,sharedLibPath)
-
-            description= self.SignalNoToCode(self.SignalNumber)
-
-            if self.SignalNumber==11:
-                description+=": Invalid memory reference to address "+signalAddress
-            elif self.SignalNumber==4 or self.SignalNumber==8:
-                description+=": Faulty Instruction at address "+signalAddress
+        while True:
+            line= p1.stderr.readline()
+            if not line:
+                break
+            if line.strip()=="":
+                continue
+            if re.match("warning:",line):
+                logWarning(line)
+                continue
+            try:
+                line=line.decode()
+            except:
+                pass
             else:
-                description+=": (Error Number "+str(self.SignalErrorNumber)+")"
+                if line.count("raise.c")>0 or line.count("No such file or directory")>0:
+                    continue
+                err.append(line)
 
-            self.SignalAddress=signalAddress
-            self.SignalDescription=description
+        if len(err)>0:
+            # print("Error while reading Last event:\n")
+            logErr("Error while reading Last event:\n")
+            for er in err:
+                # print(er)
+                logErr(er)
+            # sys.exit()
+        while True:
+            line = p1.stdout.readline()
+            if not line:
+                break
+            try:
+                line=line.decode()
+            except:
+                pass
+            else:
+                if re.search(sigInfoRegex,line):
+                    x=re.search(sigInfoRegex,line)
+                    self.SignalNumber=int(x.group(1))
+                if re.search(pgrpInfoRegex,line):
+                    x=re.search(pgrpInfoRegex,line)
+                    self.ThreadGID=int(x.group(1))
+                if re.search(ErroNoRegex,line):
+                    x=re.search(ErroNoRegex,line)
+                    self.SignalErrorNumber=int(x.group(1))
+
+        errorno,signalAddress = self.GetSignalAddressandErrorNo(coreFilePath,executablePath,sharedLibPath)
+
+        description= self.SignalNoToCode(self.SignalNumber)
+
+        if self.SignalNumber==11:
+            description+=": Invalid memory reference to address "+signalAddress
+        elif self.SignalNumber==4 or self.SignalNumber==8:
+            description+=": Faulty Instruction at address "+signalAddress
+        else:
+            description+=": (Error Number "+str(self.SignalErrorNumber)+")"
+
+        self.SignalAddress=signalAddress
+        self.SignalDescription=description
 
 
 

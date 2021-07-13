@@ -1,3 +1,4 @@
+from config import ScriptDir
 import json
 import os 
 import csv
@@ -43,7 +44,7 @@ def updateUtil(resultId):
         return data1
 
 def update(resultId):
-     filehandler= open("model.obj", 'rb') 
+     filehandler= open(ScriptDir+"/model.obj", 'rb') 
      object = pickle.load(filehandler)
      if isinstance(resultId, list):
          for result in resultId:
@@ -56,7 +57,7 @@ def update(resultId):
          object.fit_dataset(data1)
 
        
-     filehandler=open("model.obj",'wb')
+     filehandler=open(ScriptDir+"/model.obj",'wb')
      pickle.dump(object,filehandler)   
      print("done") 
           

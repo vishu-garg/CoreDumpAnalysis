@@ -1,3 +1,4 @@
+from config import ScriptDir
 from math import sin
 from typing import Text
 from levenshtein_distUtil import calculate_dist
@@ -191,20 +192,20 @@ class Clustering_Train:
       return value;    
 
 if __name__ == '__main__':
-      chunk = pd.read_csv("C:/Users/Hp/Downloads/CoreDumpAnalysis-master/CoreDumpAnalysis-master/dataset.csv", chunksize=1000000,header=0)
+      chunk = pd.read_csv(ScriptDir+"/dataset.csv", chunksize=1000000,header=0)
       df = pd.concat(chunk)
       X_train, X_test = train_test_split(df, test_size=0.01, random_state=3)
       MainObj=Clustering_Train()
       MainObj.fit_dataset(X_train)
     
       #Saving the model as binary 
-      file_pi = open('model.obj', 'wb') 
+      file_pi = open(ScriptDir+"/model.obj", 'wb') 
       pickle.dump(MainObj, file_pi)
       print("Saved")
       
 
       #Loading the model from the saved file
-      filehandler= open("model.obj", 'rb') 
+      filehandler= open(ScriptDir+"/model.obj", 'rb') 
       object = pickle.load(filehandler)
       print("loaded")
       ans=object.predict(X_test)

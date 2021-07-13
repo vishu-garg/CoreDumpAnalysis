@@ -1,7 +1,8 @@
+from config import ScriptDir
 import pandas as pd
 from Clustering_Train import Clustering_Train
 import pickle
-def train(path="./dataset.csv"):
+def train(path=ScriptDir+"/dataset.csv"):
     """ This function is used to train the model with the given dataset
      
       Parameters:
@@ -16,7 +17,7 @@ def train(path="./dataset.csv"):
     MainObj=Clustering_Train()
     MainObj.fit_dataset(df)
     print("done")
-    file_pi = open('model.obj', 'wb') 
+    file_pi = open(ScriptDir+"/model.obj", 'wb') 
     pickle.dump(MainObj, file_pi)
     print("Saved")
 
