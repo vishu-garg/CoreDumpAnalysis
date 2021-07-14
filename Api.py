@@ -10,9 +10,10 @@ from flask_restful import reqparse, abort, Api, Resource
 from Main import CoreDumpAnalysis
 import threading
 from config import RESULT_FOLDER
-from Clustering_Train import Clustering_Train
-from Cluster import Cluster
+from ClusterofErrors import ClusterOfErrors
+from ClusterOfCoredumps import ClusterOfCoredumps
 from ClusteringUtil import ClusteringUtil
+from ML_Model import ML_Model
 from levenshtein_distUtil import calculate_dist
 from predict import predict
 from update import update
@@ -141,7 +142,6 @@ class StartAnalysis(Resource):
             CoreDumpAnalyzerObj=CoreDumpAnalysis()
             try:
                 resp, status= CoreDumpAnalyzerObj.analyze(tmpDirPath,False)
-                # print(type(resp))
                 response=jsonify({"resultID":resp})
                 response.status_code=status
                 return response
@@ -163,15 +163,24 @@ class Suggest(Resource):
                 result= json.load(file)
                 StackTrace=""
                 lastThreadId=int(result["LastEvent"]["ThreadID"])
+                error_number=int(result['LastEvent']['SignalNumber'])
                 result=result["Threads"][lastThreadId-1]["StackFrames"]
-
+          
                 for frame in result:
                     if not frame["Info"]["Function"]:
                         continue
                     if(len(StackTrace)>0):
                         StackTrace+=" "
                     StackTrace+=frame["Info"]["Function"] 
-                response=jsonify({"Results":predict(StackTrace)})
+                data={"StackFrames":StackTrace,'SignalNumber':error_number}
+                ans=predict(data)
+                returning_val=[]
+                for re in ans:
+                    with open(RESULT_FOLDER+str(re)+"/Suggestions.txt",'r') as file:
+                            st= json.load(file)
+                            returning_val.append(st['suggestions'])            
+
+                response=jsonify({"Results":returning_val})
                 response.status_code=200
                 return response
         except Exception as e:

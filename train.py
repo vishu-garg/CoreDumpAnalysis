@@ -1,6 +1,6 @@
 from config import ScriptDir
 import pandas as pd
-from Clustering_Train import Clustering_Train
+from ClusterofErrors import ClusterOfErrors
 import pickle
 def train(path=ScriptDir+"/dataset.csv"):
     """ This function is used to train the model with the given dataset
@@ -14,12 +14,11 @@ def train(path=ScriptDir+"/dataset.csv"):
     """
     chunk = pd.read_csv(path, chunksize=1000000,header=0)
     df = pd.concat(chunk)
-    MainObj=Clustering_Train()
-    MainObj.fit_dataset(df)
-    print("done")
+    MainObj=ClusterOfErrors()
+    MainObj.fit(df)
     file_pi = open(ScriptDir+"/model.obj", 'wb') 
     pickle.dump(MainObj, file_pi)
-    print("Saved")
+    print("Done Training")
 
 if __name__ == '__main__':
     train()    
