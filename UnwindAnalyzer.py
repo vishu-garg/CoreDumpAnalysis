@@ -37,33 +37,33 @@ class UnwindAnalyzer :
         #     sys.exit(2)
         # else:
 
-        err=[]
+        # err=[]
 
-        while True:
-            line= p1.stderr.readline()
-            if not line:
-                break
-            try:
-                line=line.decode()
-            except:
-                pass
-            else:
-                if line.strip()=="":
-                    continue
-                if re.match("warning:",line):
-                    logWarning(line)
-                    continue
-                if line.count("raise.c")>0 or line.count("No such file or directory")>0:
-                    continue
-                err.append(line)
+        # while True:
+        #     line= p1.stderr.readline()
+        #     if not line:
+        #         break
+        #     try:
+        #         line=line.decode()
+        #     except:
+        #         pass
+        #     else:
+        #         if line.strip()=="":
+        #             continue
+        #         if re.match("warning:",line):
+        #             logWarning(line)
+        #             continue
+        #         if line.count("raise.c")>0 or line.count("No such file or directory")>0:
+        #             continue
+        #         err.append(line)
 
-        if len(err)>0:
-            # print("Error while reading AUXV info:\n")
-            logErr("Error while reading AUXV info:\n")
-            for er in err:
-                # print(er)
-                logErr(er)
-            # sys.exit()
+        # if len(err)>0:
+        #     # print("Error while reading AUXV info:\n")
+        #     logErr("Error while reading AUXV info:\n")
+        #     for er in err:
+        #         # print(er)
+        #         logErr(er)
+        #     # sys.exit()
 
         flg=0
         while True:
@@ -348,7 +348,7 @@ class UnwindAnalyzer :
                     num_id=x.group(1)
                     # print(num_id,num_val)
                     if num_id=='1':
-                        x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+).*",line)
+                        x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+)\s+.*",line)
                         # print(x1.group(2),num_id)
                         num_val=x1.group(2)
                         stackFrame.IP=num_val
@@ -359,7 +359,7 @@ class UnwindAnalyzer :
                         stackFrame.BP=hex(BP_in_Int)
                     elif num_id=='3':
                         # print(x1.group(2),num_id)
-                        x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+).*",line)
+                        x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+)\s+.*",line)
                         num_val=x1.group(2)
                         stackFrame.SP=num_val
         stackFrame.getLineFromIP(self.executablePath,self.coreFilePath,self.SharedLibPath)

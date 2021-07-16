@@ -94,7 +94,7 @@ class StackFrame:
             # print("Frame is Empty")
             return
 
-        extractInfoRegEx= r'Line\s+(\d+)\s+of\s+"(.*)".*<(.+)\+.*>'
+        extractInfoRegEx= r'Line\s+(\d+)\s+of\s+"(.*)".*<(.+).*>'
 
         x=re.match(extractInfoRegEx,output)
 
