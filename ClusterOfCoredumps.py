@@ -2,8 +2,8 @@ import pandas as pd
 from levenshtein_distUtil import calculate_dist
 from ClusteringUtil import ClusteringUtil
 
-class Cluster:
-    """ This is the class whose objects will be used as clusters in our model
+class ClusterOfCoredumps:
+    """ The object of this class stores the cluster information for coredumps means it store data of innermost cluster of the model
     It stores 
     X_train: the training dataset in it for using KNN modelling
     ClusteringUtilObj: which has all the important information i.e. Size of X_train, frequency count of every frame in X_train
@@ -53,7 +53,6 @@ class Cluster:
                 self.ClusteringUtilObj.doc_freq.append(0)
             self.ClusteringUtilObj.doc_freq[self.ClusteringUtilObj.word2idx[word]] += 1
 
-        #prv_lcp = self.lcp
         if not self.lcp:
           self.lcp=" ".join(response)
         else:
@@ -63,7 +62,6 @@ class Cluster:
             self.lcp=" ".join(temp_lcp)
         
         
-        cur_lcp = self.lcp
         return
 
     def compute_scores(self,anchor_row):
@@ -75,7 +73,7 @@ class Cluster:
             anchor_row(list): the stack trace for which we have to compute scores
 
             Returns:
-            list: reversly sorted list having score and index of the stack traces in X_train with it          
+            list: reversly sorted list having score and resultIds of the stack traces in X_train with it          
         
         """
         anchor_seq= anchor_row.split(" ")
@@ -107,13 +105,12 @@ class Cluster:
       
         """ This function us used to find the most similar k stack traces index for the given 
          stack_frame(row).
-         
 
           Parameters:
             row(list): the value for  which we have to find the similar stack traces. It should contain "StackFrames" value in it
             k(int): How many similar stack traces required
           Returns:
-            list:return the list containing the index of k similar stacktraces present in X_train       
+            list:return the list containing the resultIds of k similar stacktraces present in X_train       
         
         """  
         anchor_row=row["StackFrames"]

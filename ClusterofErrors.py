@@ -4,28 +4,27 @@ from typing import Text
 from levenshtein_distUtil import calculate_dist
 from ClusteringUtil import ClusteringUtil
 from sklearn.model_selection import train_test_split
-from Cluster import Cluster
+from ClusterOfCoredumps import ClusterOfCoredumps
 import pandas as pd
 from predict import predict
 
 import pickle
 
-class Clustering_Train:
-  """ This class is the main class of the model 
-  For creating a model you need to have the object of this class
-  On creating a object it will create a object of ClusteringUtil and levenshtein_distUtil
-  classes which will be used during training and testing
+class ClusterOfErrors:
+  """ Thw objects of this class are used for storing clusters of all types of different error types
+  On creating a object it will create a object of ClusteringUtil classes which will be used during training and testing
+   and also initaializing the cluster list which stores all the objects of clusterofcoredumps
 
   """
   def __init__(self):
-    """ This constructor is used to create the objects of ClusteringUtil and levenshtein_distUtil
-  classes and also initaializing the cluster list
+    """ This constructor is used to create the objects of ClusteringUtil 
+    classes and also initaializing the cluster list which stores all the objects of clusterofcoredumps
   
-    Parameters:
-    None
+     Parameters:
+      None
 
-    Returns:
-    None
+      Returns:
+       None
     """  
     self.Cluster_Signatures=ClusteringUtil()
     self.clusters=[]
@@ -33,8 +32,8 @@ class Clustering_Train:
 
 
 
-  def fit_stack(self,row):
-    """ This function is used to fit the given training dataset row into the model.
+  def fit(self,X_train):
+    """ This function is used to fit the given training dataset X_train into the model.
     This function modifies the tf-idf based upon the new value added 
     Also finds a suitable cluster for the given trainign row 
     (i.e having cluster having lcp length>=20 with this entry's stack frame)
@@ -46,8 +45,8 @@ class Clustering_Train:
     None
     
     """
-    print(row)
-    stackTrace=row['StackFrames'].split(" ") #splits the stackframe string to the list
+
+    stackTrace=X_train['StackFrames'].split(" ") #splits the stackframe string to the list
     stackTrace=self.Cluster_Signatures.remove_equals(stackTrace) #removes the recursion
     
     self.Cluster_Signatures.N=self.Cluster_Signatures.N+1; #adding 1 signifying that a new row has been added
@@ -73,35 +72,15 @@ class Clustering_Train:
 
       ind+=1
 
-    if(max_val<20 and max_val != len(stackTrace)):
-      Obj=Cluster()
-      Obj.fit(row)
+    if(max_val<10 and max_val != len(stackTrace)):
+      Obj=ClusterOfCoredumps()
+      Obj.fit(X_train)
       self.clusters.append(Obj)
     else:
-      self.clusters[max_ind].fit(row)
+      self.clusters[max_ind].fit(X_train)
 
       
-  def fit_dataset(self,X_train):
-    """ This function is used to fit the given training dataset into the model.
-    This function will call the function fit_stack for every entry present in the X_train
-
-    Parameters:
-    X_train (pandas.Dataframe): Training Dateset used to train the model
-
-    Returns:
-    None
-    
-    """
-    if isinstance(X_train, pd.DataFrame):
-        for _,row in X_train.iterrows(): 
-          self.fit_stack(row)     
-    else:
-          self.fit_stack(X_train)
-
-    #print(len(self.clusters))
-
-
-
+  
 
   def find_cluster(self,anchor_row):
     """ This function is used to find the best cluster for the given stack frame .
@@ -135,12 +114,13 @@ class Clustering_Train:
         cntr+=1
     ans=[]
     scores.sort(reverse=True)
-    for i in range(5):
+    maxi=min(len(scores),5)
+    for i in range(maxi):
       ans.append(scores[i][1])
     return ans
     
 
-  def predict_single(self,row):
+  def predict(self,row):
       """ This function is used to find the most suitable 5 stackframes for the given row 
       
     Parameters:
@@ -151,7 +131,6 @@ class Clustering_Train:
       
       """
       cluster_ind=self.find_cluster(row['StackFrames']) #finds the best cluster index
-      single_val=[]
       ans=[]
       for i in cluster_ind:
         tmp=self.clusters[i].predict(row) #finds the 5 stack frames that are having 
@@ -160,53 +139,15 @@ class Clustering_Train:
           vl=self.clusters[i].X_train.iloc[j]['ResultId'] 
           vl=(int)(vl)
           ans.append(vl)
+          
+          stackFrame=(self.clusters[i].X_train.iloc[j]["StackFrames"]).split(" ")
+          str_val=" ".join(stackFrame)
+          #print(j,"       ",str_val)
+         # print("\n\n\n") 
+          
           if(len(ans)>=5):
             break
         if len(ans)>=5:
-          break     
-        stackFrame=(self.clusters[i].X_train.iloc[j]["StackFrames"]).split(" ")
-        str_val=" ".join(stackFrame)
-        #print(str_val)
-        #print("\n\n\n")  
+          break             
+         
       return ans
-
-  def predict(self,X_test):
-      """ This function is used to find the most suitable 5 stackframes for the given testing datset 
-        
-      Parameters:
-      row (list): list for which we have to predict the most similar stack frames
-
-      Returns:
-      list: list of the 5 resultIds whose stack frames that are having highest similarity with the given stackframe 
-        
-        """
-
-      value=[]
-      if isinstance(X_test, pd.DataFrame):
-        for _,row in X_test.iterrows(): 
-          single_val=self.predict_single(row)
-          value.append(single_val)         
-      else:
-          single_val=self.predict_single(X_test)
-          return single_val
-      return value;    
-
-if __name__ == '__main__':
-      chunk = pd.read_csv(ScriptDir+"/dataset.csv", chunksize=1000000,header=0)
-      df = pd.concat(chunk)
-      X_train, X_test = train_test_split(df, test_size=0.01, random_state=3)
-      MainObj=Clustering_Train()
-      MainObj.fit_dataset(X_train)
-    
-      #Saving the model as binary 
-      file_pi = open(ScriptDir+"/model.obj", 'wb') 
-      pickle.dump(MainObj, file_pi)
-      print("Saved")
-      
-
-      #Loading the model from the saved file
-      filehandler= open(ScriptDir+"/model.obj", 'rb') 
-      object = pickle.load(filehandler)
-      print("loaded")
-      ans=object.predict(X_test)
-      print(ans) 

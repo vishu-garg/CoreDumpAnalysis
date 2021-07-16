@@ -3,11 +3,12 @@ import math
 from collections import Counter
 
 class ClusteringUtil:
-    """ This class is the utility created for the Cluster and Clustering_Train class 
+    """ 
+    This class is the utility created for the both types of clusters i.e. ClusterOfCoredumps and ClusterofErrors class 
     It stores the
     N: signifies the number of dataset values the object has
     doc_freq:list having the frequency of all the functions present in the object
-    word2idx: the dict which stores the index of every function/string in doc_freq
+    word2idx: the dict which stores the index of every function/string in doc_freq i.e. using this we convert word to index
     """
 
 
@@ -54,19 +55,16 @@ class ClusteringUtil:
         vec = {}
         words_freqs = Counter(words)
         for word, freq in words_freqs.items():
-            if word not in self.word2idx or self.doc_freq[self.word2idx[word]]==0:
-                idf = np.log(self.N)
+            if word not in self.word2idx or self.doc_freq[self.word2idx[word]]==0: 
+                if self.N==0:
+                  idf=0
+                else:  
+                 idf = np.log(self.N)
             else:
                 idf = self.doc_freq[self.word2idx[word]]
             tf = np.sqrt(words_freqs[word])
             vec[word] = tf, idf  
         return vec
-
-
-   # def remove_frame(self,words):
-   #    words_freqs = Counter(words)
-   #    for word, freq in words_freqs.items():
-   #       self.doc_freq[self.word2idx[word]]-=freq
 
 
     def compute_lcp(self,s,t):
@@ -79,7 +77,7 @@ class ClusteringUtil:
     Returns:
     int: length of lcp of the two stack traces
     
-    """
+     """
       temp=[]
       len1=len(s)
       len2=len(t)
