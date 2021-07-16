@@ -29,42 +29,7 @@ class UnwindAnalyzer :
 
     def getAuxvFromNotes(self,corefilePath):
         output=[]
-        # try:
         p1 = subprocess.Popen(["eu-readelf","--note",corefilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # except Exception as e:
-        #     # print(e.args[1])
-        #     logErr(e.args[1])
-        #     sys.exit(2)
-        # else:
-
-        # err=[]
-
-        # while True:
-        #     line= p1.stderr.readline()
-        #     if not line:
-        #         break
-        #     try:
-        #         line=line.decode()
-        #     except:
-        #         pass
-        #     else:
-        #         if line.strip()=="":
-        #             continue
-        #         if re.match("warning:",line):
-        #             logWarning(line)
-        #             continue
-        #         if line.count("raise.c")>0 or line.count("No such file or directory")>0:
-        #             continue
-        #         err.append(line)
-
-        # if len(err)>0:
-        #     # print("Error while reading AUXV info:\n")
-        #     logErr("Error while reading AUXV info:\n")
-        #     for er in err:
-        #         # print(er)
-        #         logErr(er)
-        #     # sys.exit()
-
         flg=0
         while True:
             line = p1.stdout.readline()
@@ -97,13 +62,7 @@ class UnwindAnalyzer :
         return fields
 
     def getStringfromAddr(self,addr):
-        # try:
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # except Exception as e:
-        #     # print(e.args[1])
-        #     logErr(e.args[1])
-        #     sys.exit(2)
-        # else:
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
         p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
@@ -131,12 +90,9 @@ class UnwindAnalyzer :
                 err.append(line)
 
         if len(err)>0:
-            # print("Error while getting AUXV fields information at address: "+addr+"\n")
             logErr("Error while getting AUXV fields information at address: "+addr+"\n")
             for er in err:
-                # print(er)
                 logErr(er)
-            # sys.exit(2)
 
         output=None
 
@@ -163,8 +119,6 @@ class UnwindAnalyzer :
         corefilePath=Result.coreDumpInfo['FilePath']
         auxvInfoOutput=self.getAuxvFromNotes(corefilePath)
         fields=self.getFields(auxvInfoOutput)
-        # print(fields)
-        # try:
         self.systemContext.UID=int(fields['UID'])
         self.systemContext.EUID=int(fields['EUID'])
         self.systemContext.GID=int(fields['GID'])
@@ -173,10 +127,6 @@ class UnwindAnalyzer :
         self.systemContext.EntryPoint=hex(int(fields['ENTRY'],16))
         self.systemContext.BasePlatform=self.getStringfromAddr(fields['BASE'])
         self.systemContext.SystemArchitecture=self.getStringfromAddr(fields['PLATFORM'])
-        # except Exception as e:
-        #     # print("Error no such AUXV fields "+str(e.args))
-        #     logErr("Error no such AUXV fields "+str(e.args))
-        #     sys.exit(2)
         
 
     def setContextFields(self,Result):
@@ -187,13 +137,7 @@ class UnwindAnalyzer :
         # pprint(self.systemContext.__dict__)
 
     def getThreads(self):
-        # try:
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # except Exception as e:
-        #     # print(e.args[1])
-        #     logErr(e.args[1])
-        #     sys.exit(2)
-        # else:
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
         p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
@@ -202,28 +146,6 @@ class UnwindAnalyzer :
         p1.stdin.write(('info threads\n').encode())
         p1.stdin.write(('echo --> ThreadEnds\n').encode())
         p1.stdin.close()
-
-        # err=[]
-
-        # while True:
-        #     line= p1.stderr.readline()
-        #     if not line:
-        #         break
-        #     line=line.decode()
-        #     # if line.strip()=="":
-        #     #             continue
-        #     # if re.match("warning:",line):
-                # logWarning(line)
-        #     #     continue
-        #     err.append(line)
-
-        # if len(err)>0:
-        #     print("Error while getting Threads info:\n")
-        #     logErr("Error while rgetting Threads info:\n")
-        #     for er in err:
-        #         print(er)
-        #         logErr(er)
-        #     sys.exit()
         cnt=0
         flg=0
         activeThreadId=None
@@ -239,11 +161,9 @@ class UnwindAnalyzer :
                     pass
                 else:
                     if line.count("ThreadEnds") >0 or line.count("(Exiting)") or flg==2:
-                        # print(line)
                         flg=2
                         continue
                     if flg==1:
-                        # print(line)
                         if re.match(threadInfoRegex,line) :
                             x=re.match(threadInfoRegex,line)
                             cnt+=1
@@ -267,13 +187,7 @@ class UnwindAnalyzer :
         return cnt,ThreadIdsandPIDs,activeThreadId,activeThreadPID
 
     def getFrameNum(self,id):
-        # try:
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # except Exception as e:
-        #     # print(e.args[1])
-        #     logErr(e.args[1])
-        #     sys.exit(2)
-        # else:
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
         p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
@@ -297,43 +211,38 @@ class UnwindAnalyzer :
                         p1.terminate()
                         flg=2
                         break
-                        # continue
-                    # print(line)
                     if flg==1 and re.search(r"#(\d*)",line):
                         cnt+=1
-                        # print(line)
                     elif line.count("---BackTracingThread---")>0:
                         flg=1
                         if re.search(r"#(\d*)",line):
                             cnt+=1
-                            # print(line)
                     else:
                         continue
             else:
                 break
         return cnt
 
-    def AnalyzeCurFrame(self,ThreadId, frameNum):
-        stackFrame = StackFrame()
-        stackFrame.threadId=ThreadId
-        stackFrame.FrameNo=frameNum
-        # try:
+    def AnalyzeCurFrames(self,ThreadId, frames):
+        StackFrames=[]
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # except Exception as e:
-        # print(e.args[1])
-        # logErr(e.args[1])
-        # sys.exit(2)
-        # else:
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
         p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
         p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
         p1.stdin.write(('thread '+str(ThreadId)+'\n').encode())
-        p1.stdin.write(('frame '+str(frameNum)+'\n').encode())
-        p1.stdin.write(('p $pc \n').encode())
-        p1.stdin.write(('p $x29 \n').encode())
-        p1.stdin.write(('p $sp \n').encode())
+        for frameNum in range (0,frames):
+            p1.stdin.write(('frame '+str(frameNum)+'\n').encode())
+            p1.stdin.write(('p $pc \n').encode())
+            p1.stdin.write(('p $x29 \n').encode())
+            p1.stdin.write(('p $sp \n').encode())
         p1.stdin.close()
+        
+        stackFrame = StackFrame()
+        stackFrame.threadId=ThreadId
+        
+        frameCnt=0
+
         while True:
             line= p1.stdout.readline()
             if not line:
@@ -346,33 +255,116 @@ class UnwindAnalyzer :
                 if re.match(registerValRegex,line):
                     x=re.match(registerValRegex,line)
                     num_id=x.group(1)
-                    # print(num_id,num_val)
+                    num_id=str((int)(num_id)%3)
                     if num_id=='1':
                         x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+)\s+.*",line)
-                        # print(x1.group(2),num_id)
                         num_val=x1.group(2)
                         stackFrame.IP=num_val
                     elif num_id=='2':
                         x1=re.search(r".*\s*\$(\d+)\s+=\s+(.*)",line)
-                        # print(x1.group(2),num_id)
                         BP_in_Int=int(x1.group(2))
                         stackFrame.BP=hex(BP_in_Int)
-                    elif num_id=='3':
-                        # print(x1.group(2),num_id)
+                    elif num_id=='0':
                         x1= re.match(r".*\s*\$(\d+)\s+=\s+.*\s+(0?x?[a-f\d]+)\s+.*",line)
                         num_val=x1.group(2)
                         stackFrame.SP=num_val
-        stackFrame.getLineFromIP(self.executablePath,self.coreFilePath,self.SharedLibPath)
-        return stackFrame
+
+                        frameNum=frameCnt
+                        stackFrame.FrameNo=frameNum;
+                        StackFrames.append(stackFrame)
+                        frameCnt+=1
+                        stackFrame=StackFrame()
+                        stackFrame.threadId=ThreadId
+                
+        return StackFrames
+
+
+    def getLineFromIP(self,StackFrames):
+        p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
+        p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
+        p1.stdin.write(('file "'+self.executablePath+'"\n').encode())
+        p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
+        
+        for stackFrame in StackFrames:
+            p1.stdin.write(('info line *'+str(stackFrame.IP)+'\n').encode())
+        
+        p1.stdin.write(('quit \n').encode())
+        p1.stdin.close()
+
+        err=[]
+
+        while True:
+            line=p1.stderr.readline()
+            if not line:
+                break;
+            try:
+                line=line.decode()
+            except:
+                pass
+            else:
+                if line.strip()=="":
+                    continue
+                if re.match("warning:",line):
+                    logWarning(line)
+                    continue
+                if line.count("raise.c")>0 or line.count("No such file or directory")>0:
+                    break
+                err.append(line)
+
+        if len(err)>0:
+            logErr("Error extracting Stacktrace....")
+            for er in err:
+                logErr(er)
+
+        flg=0
+        output=""
+
+        cnt=0
+
+        while True:
+            line= p1.stdout.readline()
+            if not line:
+                break
+            try:
+                line=line.decode()
+            except:
+                pass
+            else:
+                if flg==1 and line.count("(gdb)")>0:
+                    flg=0
+                    if len(output)>0:
+                        extractInfoRegEx= r'Line\s+(\d+)\s+of\s+"(.*)".*<(.+).*>'
+
+                    x=re.match(extractInfoRegEx,output)
+
+                    if x:
+
+                        LineNum=x.group(1)
+                        FileName=x.group(2)
+                        FunctionName=x.group(3)
+
+                        StackFrames[cnt].Info["Line"]=LineNum
+                        StackFrames[cnt].Info["File"]=FileName
+                        StackFrames[cnt].Info["Function"]=FunctionName
+
+                    output=""
+                    cnt+=1
+
+                if flg==1:
+                    output+=line.strip()
+                elif re.search(r"Line\s+",line) or re.search(r"No line",line):
+                    flg=1
+                    x= re.match(r"\(gdb\)\s+(.*)",line).group(1)
+                    output+=x.strip()
+                else:
+                    continue
+        
 
     def UnwindCurrentThread(self,ThreadId):
         numFrames=self.getFrameNum(ThreadId)
-        StackFrames=[]
-        for frame in range(numFrames):
-            # print('Frame num ',frame)
-            logConsole('Frame num '+str(frame))
-            CurTrace=self.AnalyzeCurFrame(ThreadId,frame)
-            StackFrames.append(CurTrace)
+        StackFrames=self.AnalyzeCurFrames(ThreadId,numFrames)
+        self.getLineFromIP(StackFrames)
         return StackFrames
 
 
@@ -393,7 +385,7 @@ class UnwindAnalyzer :
         Threads=[]
 
         for threadId,threadPID in ThreadIdsandPIDs:
-            # print("Analyzing Thread No.",threadId)
+            print("Analyzing Thread No.",threadId)
             logConsole("Analyzing Thread No."+str(threadId))
             stackTraces= self.UnwindCurrentThread(threadId)
             thread = Thread()
@@ -408,7 +400,7 @@ class UnwindAnalyzer :
         #     thread.printThreadInfo()
 
         # Analyze Last Event
-        # print("Analyzing Last Event...")
+        print("Analyzing Last Event...")
         logConsole("Analyzing Last Event...")
         lastEvent=LastEventAnalyzer()
         lastEvent.AnalyzeLastEvent(self.coreFilePath,self.executablePath,self.SharedLibPath,activeThreadId,activeThreadPID)
