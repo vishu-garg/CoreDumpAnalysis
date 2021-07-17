@@ -84,9 +84,26 @@ class CoreDumps(Resource):
         response.status_code=200
         return response
 
+""" This class is responsible of handling the Analysis request"""
 class StartAnalysis(Resource):
+
+    """ 
+        Handles the POST request
+        URL: /analyse
+        data: {corefilePath,executablePath,sharedlib}
+
+        Response: (201)=> {data:resultID}
+                  (400)=> {message: Invalid Args}
+                  (409)=> {message: Errors}
+
+    """
     def post(self):
         data=request.get_json(force=True)
+        
+        """ This is an optional way to analyse 
+            in which a desired directory is uploaded 
+            for analysis. (Not used.)
+        """
         if 'directoryPath' in data:
             directoryPath=data['directoryPath']
             CoreDumpAnalyzerObj=CoreDumpAnalysis()
@@ -100,31 +117,50 @@ class StartAnalysis(Resource):
                 response=jsonify({"message":"Error Occurred","log":resultId+'/errors.log'})
                 response.status_code=400
                 return response
+        
         else:
+        
+            """
+                First we need to create a temporary directory, 
+                in which we will put all the files in a 
+                desired format
+
+                Format (Directory structure): 
+                    1. corefile.core= The uploaded core file
+                    2. summary.txt= The text file containing path of exectuable file (may be changed later)
+                    3. sharedlib/ = The directory containing the unzipped libraries as provided
+            """
+        
+            #get all files
             corefilePath=data['corefilePath']
             executablePath=data['executablePath']
             sharedLibZip=data['sharedlib']
 
+            #check for all files
             bool1= os.path.isfile(corefilePath)
             bool2= os.path.isfile(executablePath)
             bool3= os.path.isfile(sharedLibZip)
+
 
             if not bool1 or not bool2 or not bool3:
                 response=jsonify({"message":"Invalid Arguments"})
                 response.status_code=400
                 return response
 
+            #create a temporary directory path
             tmpDirPath=tempfile.mkdtemp()
-
             tmpcorefilePath=tmpDirPath+'/corefile.core'
             tmpSummaryfilePath=tmpDirPath+'/summary.txt'
 
+            #store core file path
             shutil.copyfile(corefilePath,tmpcorefilePath)
 
+            #create summary.txt file path
             summaryfile=open(tmpSummaryfilePath,'w')
             summaryfile.write("executablePath: "+executablePath+'\n')
             summaryfile.close()
 
+            #unzip and store shared libraries
             with ZipFile(sharedLibZip, 'r') as zipObj:
                 for fileinfo in zipObj.infolist():
                     l=len(fileinfo.filename)
@@ -137,8 +173,8 @@ class StartAnalysis(Resource):
                             new_path+=fileinfo.filename[i]
                     fileinfo.filename=new_path
                     zipObj.extract(fileinfo,tmpDirPath)
-                        
-                        
+
+            # Start the Analysis...           
             CoreDumpAnalyzerObj=CoreDumpAnalysis()
             try:
                 resp, status= CoreDumpAnalyzerObj.analyze(tmpDirPath,False)
@@ -151,7 +187,6 @@ class StartAnalysis(Resource):
                 response.status_code=409
                 return response
             finally:
-                # print(tmpDirPath)
                 shutil.rmtree(tmpDirPath)
 
 
@@ -295,16 +330,20 @@ class OK_TEST(Resource):
         response.status_code=200
         return response
 
+#To see if the server is up and running
+api.add_resource(OK_TEST, '/')
 
-api.add_resource(OK_TEST, '/')                  #To see if the server is up and running
 api.add_resource(CoreDump, '/coredump')
 api.add_resource(CoreDumps, '/coredumps')
+
+#Performs the analysis
 api.add_resource(StartAnalysis, '/analyse')
+
 api.add_resource(Suggest, '/suggest')
 api.add_resource(Show_Suggestion,'/showSuggestion')
+
+#Handles the uploading of files on server for analysis
 api.add_resource(UploadFilesAndAnalyse,'/uploadfiles')
-#TODO:
-# api.add_resource(None, '/stats')
 
 
 

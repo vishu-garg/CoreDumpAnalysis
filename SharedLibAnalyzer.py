@@ -14,27 +14,28 @@ from ErrorLog import logErr
 GDBLibraryRegex= r"0x([\da-f]+)\s+0x([\da-f]+)\s+\w*\s+(?:\(\*\)\s+)?(.*)"
 ReadELFSectionRegex= r"\.\w+\s*PROGBITS\s*([\da-f]+)\s*([\da-f]+)"
 
+
+
+"""This class provides the information about 
+the shared libraries which were present in the
+process during crash"""
+
 class SharedLibAnalyzer:
     def __init__(self) -> None:
         pass
 
+
+
+    """This function will parse the information from GDB output"""
     def AnalyzeGDBoutput(self,gdbOutput,gdbErr,Result):
 
         #  Check for GDB error
         if len(gdbErr) != 0:
-            # print('Err while analyzing GDB...')
             logErr('Error while analyzing GDB')
             flg=0
             for errs in gdbErr:
-                # print(errs)
                 logErr(errs)
-                # if errs.count("raise.c")==0 and errs.count("No such file or directory")==0:
-                    # flg=1
-            # if flg==1:
-                # sys.exit(2)
-            # else:
-                # print('Warning: Ignoring Raise Exception\n')
-                # logWarning('Ignoring Raise Exception')
+                
 
         #  Extract GDB modules
         modules=[]
@@ -46,7 +47,6 @@ class SharedLibAnalyzer:
                 endAddr = x.group(2)
                 library = x.group(3)
                 logConsole('Shared Library: 0x'+startAddr+' - 0x'+endAddr+': '+library)
-                # print('Shared Library: 0x'+startAddr+' - 0x'+endAddr+': '+library)
                 
                 module = CD_Module()
                 StartAddr = int(startAddr,16)
@@ -55,37 +55,26 @@ class SharedLibAnalyzer:
                 FileName = os.path.basename(library)
                 LocalPath = os.path.join(SharedLibPath,FileName)
                 if not os.path.isfile(LocalPath):
-                #   print("Warning : Module "+FilePath +" is not found in local shared library folder")
                     logWarning(str('Module'+FilePath+' is not found in local shared library folder'))
                     LocalPath="Not Found Locally"
                 FileSize = os.path.getsize(library)
                 module.generateModule(StartAddr,EndAddr,FilePath,FileName,LocalPath,FileSize)
                 modules.append(module)
 
-
         #  Resolve Symlinks
         for module in modules:
-            # try:
             p1 = subprocess.Popen(["readlink","-f",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            # except Exception as e:
-                # print(e.args[1])
-                # logErr(e.args[1])
-                # sys.exit(2)
-            # else:
             output=p1.stdout.readline().decode()
             path=output.strip()
             module.FilePath=path
             module.FileName=os.path.basename(path)
 
+        """ The address that we got from GDB involves the offsets in them,
+             we need to reduce these offsets to get the bases address 
+             of each module"""
         # Add backingFiles
         for module in modules:
-            # try:
             p1 = subprocess.Popen(["readelf","-S",module.FilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            # except Exception as e:
-                # print(e.args[1])
-                # logErr(e.args[1])
-                # sys.exit(2)
-            # else:
             output=[]
             err=[]
             while True:
@@ -106,23 +95,15 @@ class SharedLibAnalyzer:
                         err.append(line)
                     else:
                         break
-
-                # if len(err)>0:
-                #     # print("Error while reading Shared libreary")
-                #     logErr("Error while reading Shared libreary")
-                #     for er in err:
-                #         # print(er)
-                #         logErr(er)
-                #     sys.exit(2)
                 
                 for line in output:
                     if ".text" in line:
                         x= re.search(ReadELFSectionRegex,line)
                         if x:
                             offset = int(x.group(2),16)
+                            #reduce offset from the start address
                             module.StartAddr-=offset
                             break;
-            
             
 
         # Add Modules into the Result
@@ -130,9 +111,14 @@ class SharedLibAnalyzer:
 
         return
 
+
+
+    """ We use the "info sharedlibrary"  command
+        the command is build in GDB
+        gives information about the shared libraries 
+        loaded in core file.
+    """
     def InputGDBCommands(self,p1,Result):
-        # print(Result.directoryInfo["SharedLibPath"])
-        # print(SYS_ROOT)
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+Result.directoryInfo["SharedLibPath"]+' \n').encode())
         p1.stdin.write(('file "'+Result.ExecutablePath+'"\n').encode())
@@ -140,6 +126,10 @@ class SharedLibAnalyzer:
         p1.stdin.write(bytes('info sharedlibrary'+'\n','utf-8'))
         p1.stdin.write('quit \n'.encode())
         p1.stdin.close()
+
+
+
+    """Here we read the GDB output and store it for further analysis"""
 
     def ReadGDBOutput(self,p1):
         gdbOutput=[]
@@ -169,21 +159,37 @@ class SharedLibAnalyzer:
                 break;
         return gdbOutput, gdbErr
 
+
+    """Entry function of this class
+      
+        It does follwing things:
+            Spwan a subprocess and enter GDB commands in it
+            Read the output/ errors
+            Parse the information about shared libraries
+
+        We store the following info about each module/library:
+            1. Start Address
+            2. End Address
+            3. Size of module
+            4. FilePath: (Path used by GDB)
+            5. FileName
+            6. LocalPath: (Local Path for module in sharedlib/ folder)
+    """
+
     def Analyze(self,Result):
-        # try:
+        #Open the subproecess to call GDB from it
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        
+        #Enter commands in GDB
         self.InputGDBCommands(p1,Result)
-            # Exception("error while giving input to GDB")
-        # except Exception as e:
-        #     # print(e.args[1])
-        #     logErr(e.args[1])
-        #     sys.exit(2)
-        # else:   
+
+        #Read the ouput of GDB
         gdbOutput , gdbErr=self.ReadGDBOutput(p1)
+        
+        #Analyse the output to parse the modules' information
         logConsole('Analysing GDB output...')
-        # print('Analysing GDB output...')
         self.AnalyzeGDBoutput(gdbOutput,gdbErr,Result)
-        print("Done")
+        
 
 
         

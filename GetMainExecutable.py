@@ -4,6 +4,10 @@ import re,os,sys
 
 execPathRegex=r"executablePath:\s(.*)"
 
+
+""" This functions gives us the executable file, at the path 
+provided in summary.txt files, this will be useful in later versions, when we can fetch the
+executable from server using URL provided."""
 class GetMainExecutable:
     def __init__(self) -> None:
         pass

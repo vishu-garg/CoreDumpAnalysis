@@ -27,9 +27,19 @@ class UnwindAnalyzer :
         self.systemContext = SystemContext()
         pass
 
+    """
+        This function extracts AUXV info from notes of Core-Dump file
+        It uses the eu-readelf command for that purpose.
+    """
     def getAuxvFromNotes(self,corefilePath):
+        
+        #to store the shell output
         output=[]
+
+        #spawn the subprocess
         p1 = subprocess.Popen(["eu-readelf","--note",corefilePath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        
+        #reading the output
         flg=0
         while True:
             line = p1.stdout.readline()
@@ -51,6 +61,9 @@ class UnwindAnalyzer :
                     continue
         return output
 
+    """
+        This function helps in mapping output in a key-value pair in dictionary
+    """
     def getFields(self,auxvInfoOutput):
         fields={}
         for line in auxvInfoOutput:
@@ -61,7 +74,13 @@ class UnwindAnalyzer :
                 fields[key]=val
         return fields
 
+    """
+        This function provide information on a particular address (extracted from notes)
+        It uses x/s 0x00000(address) command of GDB
+    """
     def getStringfromAddr(self,addr):
+        
+        #starting subprocess
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
@@ -69,8 +88,9 @@ class UnwindAnalyzer :
         p1.stdin.write(('core-file '+self.coreFilePath+'\n').encode())
         p1.stdin.write(('x/s '+addr+'\n').encode())
         p1.stdin.close()
+        
+        #reading if any errors
         err=[]
-
         while True:
             line= p1.stderr.readline()
             if not line:
@@ -94,8 +114,8 @@ class UnwindAnalyzer :
             for er in err:
                 logErr(er)
 
+        #reading output
         output=None
-
         while True:
             line= p1.stdout.readline()
             if line:
@@ -115,10 +135,28 @@ class UnwindAnalyzer :
             return x
         return "None"
 
+    """
+        This function is responsible for extracting and storing 
+        system info from AUXV note of corefile
+
+        It makes 2 function calls,
+        1) First it calls getAuxvFromNotes() function which gives the information about system context
+        2) Then getFields() function is called which parses the values present in the note in a dictionary
+
+        The few fields information is stored in an address which can be extracted using gdb, for this purpose we called getStringfromAddr() function
+
+        Finally we store the results in a variable called systemContext 
+    """
     def setAuxvFields(self,Result):
         corefilePath=Result.coreDumpInfo['FilePath']
+        
+        #extracting AUXV info from corefile
         auxvInfoOutput=self.getAuxvFromNotes(corefilePath)
+
+        #parsing AUXV notes fields in a 'fields' dictionary
         fields=self.getFields(auxvInfoOutput)
+
+        #setting results
         self.systemContext.UID=int(fields['UID'])
         self.systemContext.EUID=int(fields['EUID'])
         self.systemContext.GID=int(fields['GID'])
@@ -129,14 +167,39 @@ class UnwindAnalyzer :
         self.systemContext.SystemArchitecture=self.getStringfromAddr(fields['PLATFORM'])
         
 
+    """ 
+        This function stores the information
+        about different system parameters like,
+
+        1) Sytem_Arch.
+        2) Entry Point Address
+        3) Page/Frame Size of process
+
+        and many more
+
+        It calls the setAuxvFields function which parses the AUXV note present in corefile and set key-value pairs for the desired information.
+    """
     def setContextFields(self,Result):
+        
+        #These are default values
         self.systemContext.ProcessArchitecture= "N/A"
         self.systemContext.SystemUpTime="Could not be obtained"
-        self.setAuxvFields(Result)
-        Result.systemContext=self.systemContext
-        # pprint(self.systemContext.__dict__)
 
+        #AUXV note contains system information about this process
+        self.setAuxvFields(Result)
+
+        #store the result
+        Result.systemContext=self.systemContext
+
+    """
+        This function helps in getting information (ID and PID) about the number of threads running in our process
+        Along with this we are also able to get info about the last active thread
+
+        The commands we used are => info threads (which lists up all the threads in our process)
+    """
     def getThreads(self):
+        
+        #start the subprocess and insert commands 
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
@@ -146,12 +209,17 @@ class UnwindAnalyzer :
         p1.stdin.write(('info threads\n').encode())
         p1.stdin.write(('echo --> ThreadEnds\n').encode())
         p1.stdin.close()
+        
+        #cnt variable gives the count of all the threads
+        #activeThreadId and activeThreadPIDs are use to store info about the last active thread
+        #ThreadIdsandPIDs stores thread IDs and PIDs
         cnt=0
         flg=0
         activeThreadId=None
         activeThreadPID=None
         ThreadIdsandPIDs=[]
 
+        #reading output
         while True:
             line=p1.stdout.readline()
             if line:
@@ -184,9 +252,15 @@ class UnwindAnalyzer :
             else:
                 break
 
+        #finally returning result
         return cnt,ThreadIdsandPIDs,activeThreadId,activeThreadPID
 
+    """
+        The function uses "bt" command to parse the information about the number of frames in this thread
+    """
     def getFrameNum(self,id):
+        
+        #starting subprocess and calling the command
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
@@ -198,6 +272,8 @@ class UnwindAnalyzer :
         p1.stdin.write(('echo ---BackTracingThreadEnd--- \n').encode())
         p1.stdin.close()
         flg=0
+        
+        #cnt will give us the count of number of frames
         cnt=0
         while True:
             line= p1.stdout.readline()
@@ -221,10 +297,26 @@ class UnwindAnalyzer :
                         continue
             else:
                 break
+
+        #return the count of frames
         return cnt
 
+
+    """"
+        This function analyses the cur stackframes,
+        It returns an array where each element is containing a stackFrame object 
+
+        For each stackFrame we get followinfg information from this function:
+        1) BP = base pointer / frame pointer (in aarch64) 
+        2) IP = instruction pointer / program counter (in aarch64)
+        3) SP = stack pointer 
+    """
     def AnalyzeCurFrames(self,ThreadId, frames):
+        
+        #array to store result
         StackFrames=[]
+
+        #start subprocess
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+self.SharedLibPath+' \n').encode())
@@ -242,7 +334,7 @@ class UnwindAnalyzer :
         stackFrame.threadId=ThreadId
         
         frameCnt=0
-
+        #read output
         while True:
             line= p1.stdout.readline()
             if not line:
@@ -275,10 +367,13 @@ class UnwindAnalyzer :
                         frameCnt+=1
                         stackFrame=StackFrame()
                         stackFrame.threadId=ThreadId
-                
+
         return StackFrames
 
-
+    """
+        This function helps in getting line information from 
+        instruction pointer address.
+    """
     def getLineFromIP(self,StackFrames):
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
@@ -360,7 +455,15 @@ class UnwindAnalyzer :
                 else:
                     continue
         
+    """
+        This function helps in getting information about the stacktrace
+        of this thread.
 
+        It calls 3 functions as described below-
+        1) getFrameNum = to get the number of frames
+        2) AnalyseCurFrames= to get the information about the frames in this thread
+        3) getLineFromIP = to get the info about last executed line (pc) of the frames 
+    """
     def UnwindCurrentThread(self,ThreadId):
         numFrames=self.getFrameNum(ThreadId)
         StackFrames=self.AnalyzeCurFrames(ThreadId,numFrames)
@@ -368,12 +471,23 @@ class UnwindAnalyzer :
         return StackFrames
 
 
+    """
+        This is the entry function of UnwindAnlyser class
+
+        It provides us information about the following:
+        1) System Information
+        2) Threads Infomation
+        3) Stackframes Information
+        4) Last Event Analysis
+    """
     def Analyze(self,Result):
+
+        #set file paths needed during analysis
         self.coreFilePath=Result.coreDumpInfo['FilePath']
         self.executablePath=Result.ExecutablePath
         self.SharedLibPath=Result.directoryInfo["SharedLibPath"]
         
-        # Setting Context Fields
+        # Context Fields contains system information
         self.setContextFields(Result)
 
         # Unwind Thread Information
@@ -382,8 +496,8 @@ class UnwindAnalyzer :
         # print("Found ",numThreads," threads....")
         logConsole("Found "+str(numThreads)+" threads....")
         
+        #Store the info about the threads
         Threads=[]
-
         for threadId,threadPID in ThreadIdsandPIDs:
             print("Analyzing Thread No.",threadId)
             logConsole("Analyzing Thread No."+str(threadId))
@@ -393,11 +507,7 @@ class UnwindAnalyzer :
             thread.PID=threadPID
             thread.StackFrames=stackTraces
             Threads.append(thread)
-
         Result.Threads= Threads
-
-        # for thread in Threads:
-        #     thread.printThreadInfo()
 
         # Analyze Last Event
         print("Analyzing Last Event...")

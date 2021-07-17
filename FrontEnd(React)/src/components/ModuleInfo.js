@@ -71,7 +71,7 @@ export default function ModuleInfo({info}) {
                                 info.map((module)=>{
                                     return(
                                     <TableRow>
-                                    <TableCell>{module.FilePath}</TableCell>
+                                    <TableCell>{module.FileName}</TableCell>
                                     <TableCell>{FileSizeCalc(module.FileSize)}</TableCell>
                                     <TableCell>0x{module.StartAddr.toString(16)}</TableCell>
                                     <TableCell>0x{module.EndAddr.toString(16)}</TableCell>

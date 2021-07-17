@@ -23,9 +23,12 @@ class CoreDumpAnalysis:
 
     def isCallbyCMD(self):
         return self.callByCMD
+
     def getResultIdandPath(self):
         return self.Result.ResultID,self.Result.ResultPath
 
+
+    """This function gives information about the coredump file"""
     def generateCoreDumpFileInfo(self,path):
         data = {}
         data['FilePath']=path
@@ -53,6 +56,7 @@ class CoreDumpAnalysis:
         else:
             return self.generateCoreDumpFileInfo(coreFilePath)
         
+    """This function checks the directory structure, and returns the paths,if OK else returns None"""
     def Get_Dir_Structure(self,DirPath):
         dirs = os.listdir(DirPath)
         if(len(dirs)<3):
@@ -85,8 +89,18 @@ class CoreDumpAnalysis:
             if HasCoreFile and HasSharedLibDir and HasSummaryFile :
                 return data
 
+    """ 
+        This function is the entry point of the whole anlaysis
+
+        Params: (argv: The path/argument for the directory path, callByCMD: True in case if request is coming from shell)
+
+        Response: The response contains the resultID on successful analysis, ontherwise contains the path to erros.log file, which
+                    contains the errors, as they are logged.
+    """
     def analyze(self,argv,callByCMD):
         self.callByCMD=callByCMD
+        
+        #if call is by a CMD then extract path from arguments
         if callByCMD:
             DirectoryPath=''
             try:
@@ -109,8 +123,12 @@ class CoreDumpAnalysis:
                 logErr('Directory path not  specified')
                 sys.exit(2)
         else:
+            #We already have the direcotry path in this case
             DirectoryPath=argv
+
+        #validate the directory path    
         if os.path.exists(DirectoryPath) and os.path.isdir(DirectoryPath):
+            #get directory's structure
             directory= self.Get_Dir_Structure(DirectoryPath)
             if(directory==None):
                 # print("Invalid Directory Structure")
@@ -118,37 +136,37 @@ class CoreDumpAnalysis:
                 sys.exit(2) 
             coredump=self.generateCoreDumpFileInfo(directory['CoreFilePath'])
 
+            #Store the necessary info about input files
             self.Result.directoryInfo=directory
             self.Result.directoryPath=DirectoryPath
             self.Result.coreDumpInfo=coredump
 
-            # print('Directory Path: ')
-            # print(self.Result.directoryPath)
-            # print('Directory Info: ')
-            # pprint(self.Result.directoryInfo)
-            # print('CoreDump Info: ')
-            # pprint(self.Result.coreDumpInfo)
+            """After uploads and validations we start the analysis work"""
 
+            #Gives us the path of the executable file from summary.txt
             logConsole('Extracting Main Exectuable...\n')
             # print('\nExtracting Main Exectuable...')
             GetMainExecutable().Analyze(self.Result)
 
+            #Retrieving of shared libraries 
             logConsole('Retrieving Shared Libraries...\n')
             # print('\nRetrieving Shared Libraries...')
             SharedLibAnalyzer().Analyze(self.Result)
 
-            # pprint(self.Result.__dict__)
+            #Getting information about the threads and stacktraces
             logConsole('Unwiding Stacktraces...\n')
             # print('\nUnwiding Stacktraces...')
             UnwindAnalyzer().Analyze(self.Result)
 
-            # self.Result.printResult()
-
+            
+            #Convert the result in JSON format
             jsondata=json.dumps(self.Result.__dict__,default=lambda o: o.__dict__, indent=4)
             # print(jsondata)
 
+            #store the result
             self.Result.StoreResult(jsondata)
 
+            #if the call is not by shell, then retun resultID and status code
             if not callByCMD:
                 return self.Result.ResultID, 201
             else:
@@ -158,8 +176,6 @@ class CoreDumpAnalysis:
                     print("Analysis Complete...")
                     print("Result is stored at "+self.Result.ResultPath)
             
-
-
         else:
             logErr('Invalid Directory Path')
             print ('Invalid Directory Path')

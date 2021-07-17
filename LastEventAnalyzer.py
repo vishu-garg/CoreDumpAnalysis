@@ -21,7 +21,7 @@ class LastEventAnalyzer:
         self.SignalDescription=None  
         pass
 
-
+    """This function gives signal address and signal code (not supported in aarch64) """
     def GetSignalAddressandErrorNo(self,corefilePath,executablePath,sharedLibPath):
         # print("IN last event...",sharedLibPath)
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -58,6 +58,7 @@ class LastEventAnalyzer:
             signalAddress+="(NULL)"
         return signalAddress,errNo
 
+    """This function maps the signal number to the corresponding signal code"""
     def SignalNoToCode(self,SignalNumber):
         # print("Signal Number = ",SignalNumber)
         NumToCode={}
@@ -100,17 +101,24 @@ class LastEventAnalyzer:
 
         return SignalCode
         
+    """
+        This function helps in analysis of last event
 
+        First it calls eu-redelf to read about the signal information sent by last thread, 
+        which gives us the SignalCode, Thread's GID, and ErrorNumber
+
+        Then we get the signal address from GDB (for this purpose we use siginfo structure, which is not supported while analysing aarch64 coredump)
+
+        Finally we map the signal no. to the standard signal code, like SIGKILL, SIGSEGV, etc
+        and create a description for last event.
+        
+    """
     def AnalyzeLastEvent(self,coreFilePath,executablePath,sharedLibPath,activeThreadId,activeThreadPID):
         self.ThreadID=activeThreadId
         self.ThreadPID=activeThreadPID
-        # try:
+
         p1= subprocess.Popen(['eu-readelf --notes  "'+coreFilePath+'" | grep -B 4  "pid: '+activeThreadPID+'"'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-        # except Exception as e:
-        #     # print(e.args[1])
-        #     logErr(e.args[1])
-        #     sys.exit(2)
-        # else:
+
 
         err=[]
 
@@ -133,12 +141,9 @@ class LastEventAnalyzer:
                 err.append(line)
 
         if len(err)>0:
-            # print("Error while reading Last event:\n")
             logErr("Error while reading Last event:\n")
             for er in err:
-                # print(er)
                 logErr(er)
-            # sys.exit()
         while True:
             line = p1.stdout.readline()
             if not line:

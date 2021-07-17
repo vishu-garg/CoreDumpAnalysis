@@ -5,7 +5,7 @@ from flask import Flask, json, request, redirect, jsonify,make_response
 import os
 from werkzeug.utils import secure_filename
 from flask_restful import reqparse, abort, Api, Resource
-from config import BaseUrl,UPLOAD_FOLDER
+from config import BaseUrl,UPLOAD_FOLDER,ScriptDir
 
 ALLOWED_EXTENSIONS = set(['core', 'out', 'zip'])
 
@@ -13,12 +13,24 @@ def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 class UploadFilesAndAnalyse(Resource):
+    
+    
+    """
+        This function recieves the uploaded files
+        and adds it in the Uploads folder with a
+        unique name of it.
+
+        Args: (file: The file to be uploaded, ext: the desired extension to be given for this file)
+        
+        Response: (201)=> {uploadedFileName: The name with which the file is uploaded on server}
+                  (400)=> {message}
+    """
+
     def UploadFile(self,file,ext):
         if file.filename == '':
             resp = jsonify({'message' : 'No file selected for uploading'})
             resp.status_code = 400
             return resp
-        # if file and allowed_file(file.filename):
         if file:
             filename=uuid.uuid4().hex
             filename+= secure_filename(file.filename)
@@ -32,6 +44,16 @@ class UploadFilesAndAnalyse(Resource):
             resp.status_code = 400
             return resp
 
+
+    """
+        This function calls,
+        /analyse URL,
+
+        which then handles the analysis of 
+        the uploaded files 
+    """
+
+    
     def analyseFiles(self,corefilePath,executablePath,sharedLibpath):
         url=BaseUrl
         executablePath=os.path.abspath(executablePath)
@@ -48,11 +70,24 @@ class UploadFilesAndAnalyse(Resource):
         return response
     
     
+    """
+    Handles POST requests
+
+    URL: /uploadfiles
+    data: {corefile,exefile,sharedlib}
+
+    Response: (201)  => data:{resultID}
+              (>=400)=> data:{message}
+
+    """
+
     def post(self):
 
         if not os.path.isdir(UPLOAD_FOLDER):
             os.mkdir(UPLOAD_FOLDER)
-        # check if the post request has the file part
+
+
+        # check if the required files  are present
         if 'corefile' not in request.files:
             resp = jsonify({'message' : 'No corefile in the request'})
             resp.status_code = 400
@@ -65,14 +100,15 @@ class UploadFilesAndAnalyse(Resource):
             resp = jsonify({'message' : 'No SharedLib Zip file in the request'})
             resp.status_code = 400
             return resp
-        
 
+
+
+        #save the files in Uploads folder
+        
         corefile = request.files['corefile']
         resp = self.UploadFile(corefile,".core")
         if(resp.status_code==400):
             return resp
-        
-        ScriptDir=os.path.dirname(os.path.realpath(__file__))
         corefilePath=ScriptDir+"/Uploads/"+resp.json['uploadedFileName']
         
         exeFile= request.files['exefile']
@@ -87,7 +123,14 @@ class UploadFilesAndAnalyse(Resource):
             return resp
         sharedLibPath=ScriptDir+'/Uploads/'+resp.json['uploadedFileName']
 
+
+
+        #The files are ready to be analysed
         response = self.analyseFiles(corefilePath,executablePath,sharedLibPath)
+
+
+
+        #Delete the files from uploaded folder
 
         os.remove(corefilePath)
         os.remove(executablePath)
