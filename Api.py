@@ -32,7 +32,19 @@ parser = reqparse.RequestParser()
 parser.add_argument('corefilePath')
 parser.add_argument('executablePath')
 
+"""
+    This API handles a GET request, it returns the result.json 
+    using the given resultID
+"""
 class CoreDump(Resource):
+    """
+        Handles GET request
+
+        URL: /coredump?id=resultID
+        Response: (200) => {data: Result in JSON format}
+                  (404) => {message: Not found}
+                  (409) => {message: Error}
+    """
     def get(self):
         try:
             coredumpid=request.args.get("id")
@@ -50,8 +62,13 @@ class CoreDump(Resource):
             response.status_code=409
             return response
 
-
+"""
+    This API handles the GET requests, it returns the information 
+    about all the results which are present in Results folder
+"""
 class CoreDumps(Resource):
+    
+    #function to fetch result information
     def getResultDetails(self,resultId):
         if not os.path.exists(RESULT_FOLDER+resultId+'/Results.txt'):
             return None
@@ -73,6 +90,12 @@ class CoreDumps(Resource):
             except:
                 pass
     
+    """
+        Handles the GET request
+
+        URL: /coredumps
+        Response: (200)=> {[{result1}, {result2}, ....]}
+    """
     def get(self):
         resp=[]
         cnt=0
@@ -84,7 +107,7 @@ class CoreDumps(Resource):
         response.status_code=200
         return response
 
-""" This class is responsible of handling the Analysis request"""
+""" This class API is responsible of handling the Analysis request"""
 class StartAnalysis(Resource):
 
     """ 
@@ -189,8 +212,22 @@ class StartAnalysis(Resource):
             finally:
                 shutil.rmtree(tmpDirPath)
 
+"""
+    This class APIs helps us in interacting 
+    with the ML model and dataset
 
+    It handles 2 types of requests:
+    GET: returns the suggestion for the given result
+    POST: adds the given suggestion in the specified resultID
+"""
 class Suggest(Resource):
+
+    """
+        Handles GET request
+
+        URL: /suggest?id=resultID
+        Response: (200)=> {Results: containing 5 arrays, which are the suggestions present in top 5 similar results} 
+    """
     def get(self):
         try:
             result_id=request.args.get('id')
@@ -208,6 +245,7 @@ class Suggest(Resource):
                         StackTrace+=" "
                     StackTrace+=frame["Info"]["Function"] 
                 data={"StackFrames":StackTrace,'SignalNumber':error_number}
+                #We call the predict function of ML_Model with input as results data
                 ans=predict(data)
                 returning_val=[]
                 for re in ans:
@@ -224,6 +262,13 @@ class Suggest(Resource):
             response.status_code=400
             return response
 
+    """
+        Handles POST request
+
+        URL: /suggest, data:{id, suggestion}
+        Response (201)=> {}    (suggestion added successfully)
+                 (400)=> {message: Error} 
+    """
     def post(self):
         lock=None
         try:
@@ -243,11 +288,12 @@ class Suggest(Resource):
                 WriteLocks[resultID]=threading.Semaphore()
             lock=WriteLocks[resultID]
             while True:
+                #Wait to acquire the write lock before writing new suggestion
                 lock.acquire()
-                # print("Lock acquired...")
+
+                #critical section
                 result={}
-                with open(RESULT_FOLDER+resultID+"/Suggestions.txt",'r') as file:
-                    
+                with open(RESULT_FOLDER+resultID+"/Suggestions.txt",'r') as file: 
                     result=json.load(file)
                     suggestion_arr=result["suggestions"]
                     print(len(suggestion_arr))
@@ -262,7 +308,7 @@ class Suggest(Resource):
                         file.write(json_result)
                     response=jsonify({})
                     response.status_code=201
-                    # print("Lock released...")
+                    #finally release this write lock
                     lock.release()
                     return response
 
@@ -273,19 +319,33 @@ class Suggest(Resource):
             print("Lock released...")
             lock.release()
             return response
-                
+
+""" 
+    This API shows the suggestion added by
+    users for a specific result.
+"""                
 class Show_Suggestion(Resource):
+
+    """
+        Handles GET request
+
+        URL: /showSuggestion?id=resultID
+        
+        Response: (200) => {suggestions}
+                  (400) => {message:Error}
+    """
     def get(self):
         try:
-            print("Waiting to work....")
             resultId=request.args.get("id")
-            print(resultId)
             if resultId is None:
                 raise Exception
             if not resultId in ReadLocks:
                 ReadLocks[resultId]=threading.Semaphore()
             readLock=ReadLocks[resultId]
-            
+
+            #Our request will wait to acquire thread
+            #We used Semaphore based read-locks so as
+            #to avoid read-write problem in suggestions.txt file
             readLock.acquire()
             if not resultId in ReadCount:
                 ReadCount[resultId]=0
@@ -297,7 +357,7 @@ class Show_Suggestion(Resource):
                 writeLock.acquire()
             readLock.release()
             
-
+            #Enter into critical section
             with open(RESULT_FOLDER+str(resultId)+"/Suggestions.txt",'r') as file:
                 result= json.load(file)
                 suggestions=result["suggestions"]
@@ -305,6 +365,7 @@ class Show_Suggestion(Resource):
                 response=jsonify({"suggestions":suggestions})
                 response.status_code=200
                 
+                #Finally realease the read-lock when reading is done
                 readLock.acquire()
                 ReadCount[resultId]-=1
                 if ReadCount[resultId]==0:
@@ -322,29 +383,36 @@ class Show_Suggestion(Resource):
             if ReadCount[resultId]==0:
                 WriteLocks[resultId].release()
             ReadLocks[resultId].release()
-
             return response
+
+
 class OK_TEST(Resource):
     def get(self):
         response = jsonify({"message":"OK"})
         response.status_code=200
         return response
 
+
 #To see if the server is up and running
 api.add_resource(OK_TEST, '/')
 
+#Provides the result JSON for the given coredump
 api.add_resource(CoreDump, '/coredump')
+
+#Shows information about all the available coredumps
 api.add_resource(CoreDumps, '/coredumps')
 
 #Performs the analysis
 api.add_resource(StartAnalysis, '/analyse')
 
+#Gives suggestion (GET) and adds suggestion (POST) 
 api.add_resource(Suggest, '/suggest')
+
+#Shows the suggestions given by users using ResultID
 api.add_resource(Show_Suggestion,'/showSuggestion')
 
 #Handles the uploading of files on server for analysis
 api.add_resource(UploadFilesAndAnalyse,'/uploadfiles')
-
 
 
 if __name__ == '__main__':
