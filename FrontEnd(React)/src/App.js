@@ -5,6 +5,7 @@ import {makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
 import AppBarComponent from './components/AppBar'
+import ShowSuggestions from './components/ShowSuggestions'
 import DrawerComponent from './components/Drawer'
 import Analyse from './pages/Analyse'
 import Home from './pages/Home'
@@ -67,9 +68,7 @@ export default function App() {
       <main className={clsx(classes.content, {[classes.contentShift]: open,})}>
         <div className={classes.drawerHeader} />
           <Switch>
-            <Route path="/suggestion">
-              <AddSuggestion/>
-            </Route>
+            <Route path="/suggestion" component={ShowSuggestions}/>
             <Route path="/help">
               <HelpUtil />
             </Route>
@@ -89,9 +88,6 @@ export default function App() {
       </div>)}
     </div>)}
 
-function AddSuggestion() {
-  return <h2>AddSuggestion</h2>;
-}
 
 function HelpUtil() {
   return <h2>Help?</h2>;

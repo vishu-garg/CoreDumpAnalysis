@@ -250,15 +250,18 @@ class Suggest(Resource):
                 returning_val=[]
                 for re in ans:
                     with open(RESULT_FOLDER+str(re)+"/Suggestions.txt",'r') as file:
+                            temp_arr=[]
                             st= json.load(file)
-                            returning_val.append(st['suggestions'])            
+                            temp_arr.append(re)
+                            temp_arr.append(st['suggestions'])
+                            returning_val.append(temp_arr)            
 
                 response=jsonify({"Results":returning_val})
                 response.status_code=200
                 return response
         except Exception as e:
             print(e)
-            response=jsonify({"message":"Unknown Error"})
+            response=jsonify({"message":"Unknown Error (Result not found)"})
             response.status_code=400
             return response
 
