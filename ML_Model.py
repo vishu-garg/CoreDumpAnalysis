@@ -23,11 +23,11 @@ class ML_Model:
       
       Parameters:
       X_train (list): The  data to be fit in the model 
-
       Returns:
       None
       """
-      self.cluters[X_train['SignalNumber']].fit(X_train)   
+      self.cluters[X_train['SignalNumber']].fit(X_train) 
+
 
   def fit(self,X_train):
         """
@@ -36,7 +36,6 @@ class ML_Model:
         
         Parameters:
         X_train (list/dataframe): The  data to be fit in the model 
-
         Returns:
         None
         """
@@ -52,7 +51,6 @@ class ML_Model:
       
       Parameters:
       X_train (list): The  data to be fit in the model 
-
       Returns:
       list: The resultIds that are most similar to given row
       """
@@ -65,7 +63,6 @@ class ML_Model:
         
         Parameters:
         X_test (list/dataframe): The data for which we have to be predict 
-
         Returns:
         if X_test is list
         list: The resultIds that are most similar to given row
@@ -81,26 +78,4 @@ class ML_Model:
       return ans      
 
 
-if __name__ == '__main__':
-      chunk = pd.read_csv(ScriptDir+"/dataset.csv", chunksize=1000000,header=0)
-      df = pd.concat(chunk)
-      X_train, X_test = train_test_split(df, test_size=0.01, random_state=3)
-      MainObj=ML_Model()
-      MainObj.fit(X_train)
-     # print(len(df))
-      #print(len(X_train))
     
-      #Saving the model as binary 
-      file_pi = open(ScriptDir+"/model.obj", 'wb') 
-      pickle.dump(MainObj, file_pi)
-      print("Saved")
-      
-
-      #Loading the model from the saved file
-      filehandler= open(ScriptDir+"/model.obj", 'rb') 
-      object = pickle.load(filehandler)
-      print("loaded")
-      #print(X_test.iloc[0]['StackFrames'])
-      ans=object.predict(X_test.iloc[0])
-
-      print(ans)       

@@ -1,4 +1,4 @@
-from ConsoleLogs import logConsole
+from Logs import getWarningLogger,getConsoleLogger,logconsole,getErrLogger,logerr,logwarning
 import re,os,sys
 
 
@@ -11,6 +11,8 @@ executable from server using URL provided."""
 class GetMainExecutable:
     def __init__(self) -> None:
         pass
+
+        pass
     def Analyze(self,Result):
         SummaryFilePath = Result.directoryInfo['SummaryFilePath']
         with open(SummaryFilePath) as file:
@@ -22,7 +24,7 @@ class GetMainExecutable:
                 # print(ExecutablePath)
                 if  os.path.exists(ExecutablePath) and os.path.isfile(ExecutablePath):
                     # print("Executable Path: ",ExecutablePath)
-                    logConsole("Executable Path: "+ExecutablePath+" \n")
+                    logconsole("Executable Path: "+ExecutablePath+" \n",Result.ResultPath)
                     Result.ExecutablePath=ExecutablePath
                 else:
                     print("Err: Executable Path Not valid")

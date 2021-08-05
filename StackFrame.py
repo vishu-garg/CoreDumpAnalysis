@@ -1,10 +1,9 @@
-from WarningLog import logWarning
+
 from pprint import pprint
 from re import sub
 import sys
 import re
 import subprocess
-from ErrorLog import logErr
 from config import SYS_ROOT
 
 

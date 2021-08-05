@@ -1,9 +1,8 @@
 from ML_Model import ML_Model
 from config import ScriptDir
 import pandas as pd
-from ClusterofErrors import ClusterOfErrors
 import pickle
-def train(path=ScriptDir+"/dataset.csv"):
+def train(path=ScriptDir+"/dataset1.csv"):
     """ This function is used to train the model with the given dataset
      
       Parameters:

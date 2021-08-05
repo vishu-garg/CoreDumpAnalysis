@@ -5,3 +5,4 @@ ScriptDir=os.path.dirname(os.path.realpath(__file__))
 UPLOAD_FOLDER = ScriptDir+'/Uploads'
 RESULT_FOLDER=ScriptDir+'/Results/'
 SYS_ROOT='/usr/aarch64-linux-gnu/'
+CodeDir=os.path.dirname(os.path.realpath(__file__))+'/Codes/'

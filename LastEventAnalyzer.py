@@ -1,7 +1,6 @@
-from WarningLog import logWarning
+from Logs import getWarningLogger,getConsoleLogger,logconsole,getErrLogger,logerr,logwarning
 import re
 import subprocess
-from ErrorLog import logErr
 from config import SYS_ROOT
 import sys
 sigInfoRegex= r"info.si_signo:\s+(\d+)"
@@ -66,33 +65,34 @@ class LastEventAnalyzer:
         NumToCode[2]="SIGINT";
         NumToCode[3]="SIGQUIT";
         NumToCode[4]="SIGILL";
+        NumToCode[5]="SIGTRAP";
         NumToCode[6]="SIGABRT";
         NumToCode[7]="SIGBUS";
         NumToCode[8]="SIGFPE";
         NumToCode[9]="SIGKILL";
+        NumToCode[10]= "SIGUSR1";
         NumToCode[11]= "SIGSEGV";
+        NumToCode[12]= "SIGUSR2";
         NumToCode[13]= "SIGPIPE";
         NumToCode[14]= "SIGALRM";
         NumToCode[15]= "SIGTERM";
-        NumToCode[10]= "SIGUSR1";
-        NumToCode[12]= "SIGUSR2";
+        NumToCode[16]= "SIGSTKFLT";
         NumToCode[17]= "SIGCHLD";
         NumToCode[18]= "SIGCONT";
         NumToCode[19]= "SIGSTOP";
         NumToCode[20]= "SIGTSTP";
         NumToCode[21]= "SIGTTIN";
         NumToCode[22]= "SIGTTOU";
-        NumToCode[27]= "SIGPROF";
-        NumToCode[31]= "SIGSYS";
-        NumToCode[5]="SIGTRAP";
         NumToCode[23]= "SIGURG";
-        NumToCode[26]= "SIGVTALRM";
         NumToCode[24]= "SIGXCPU";
         NumToCode[25]= "SIGXFSZ";
-        NumToCode[16]= "SIGSTKFLT";
+        NumToCode[26]= "SIGVTALRM";
+        NumToCode[27]= "SIGPROF";
+        NumToCode[28]= "SIGWINCH";
         NumToCode[29]= "SIGIO";
         NumToCode[30]= "SIGPWR";
-        NumToCode[28]= "SIGWINCH";
+        NumToCode[31]= "SIGSYS";
+        
         
         SignalCode=NumToCode[SignalNumber]
 
@@ -113,7 +113,7 @@ class LastEventAnalyzer:
         and create a description for last event.
         
     """
-    def AnalyzeLastEvent(self,coreFilePath,executablePath,sharedLibPath,activeThreadId,activeThreadPID):
+    def AnalyzeLastEvent(self,coreFilePath,executablePath,sharedLibPath,activeThreadId,activeThreadPID,Result):
         self.ThreadID=activeThreadId
         self.ThreadPID=activeThreadPID
 
@@ -129,7 +129,7 @@ class LastEventAnalyzer:
             if line.strip()=="":
                 continue
             if re.match("warning:",line):
-                logWarning(line)
+                logwarning(line,Result.ResultPath)
                 continue
             try:
                 line=line.decode()
@@ -141,9 +141,9 @@ class LastEventAnalyzer:
                 err.append(line)
 
         if len(err)>0:
-            logErr("Error while reading Last event:\n")
+            logerr("Error while reading Last event:\n",Result.ResultPath)
             for er in err:
-                logErr(er)
+                logerr(er,Result.ResultPath)
         while True:
             line = p1.stdout.readline()
             if not line:

@@ -1,7 +1,6 @@
 from logging import log
-from ErrorLog import logErr,setErrLogger
-from WarningLog import logWarning,setWarningLogger
-from ConsoleLogs import logConsole,setConsoleLogger
+from Logs import getWarningLogger,getConsoleLogger,logconsole,getErrLogger,logerr,logwarning
+
 import sys,getopt,os
 import pathlib
 import json
@@ -11,14 +10,14 @@ from GetMainExecutable import GetMainExecutable
 from SharedLibAnalyzer import SharedLibAnalyzer
 from UnwindAnalyzer import UnwindAnalyzer
 from AnalysisResult import Result
-
+from getCode import GetCode
 
 class CoreDumpAnalysis:
     def __init__(self):
         self.Result=Result()
-        setErrLogger(self.Result.ResultPath)
-        setWarningLogger(self.Result.ResultPath)
-        setConsoleLogger(self.Result.ResultPath)
+        self.ErrLogger=getErrLogger(self.Result.ResultPath,self.Result.ResultPath)
+        self.WarningLogger=getWarningLogger(self.Result.ResultPath,self.Result.ResultPath)
+        self.ConsoleLogger=getConsoleLogger(self.Result.ResultPath,self.Result.ResultPath)
         pass
 
     def isCallbyCMD(self):
@@ -85,8 +84,9 @@ class CoreDumpAnalysis:
                         if(fileExtension==".core"):
                             HasCoreFile=True
                             data['CoreFilePath']=filePath
+
             
-            if HasCoreFile and HasSharedLibDir and HasSummaryFile :
+            if HasCoreFile and HasSharedLibDir and HasSummaryFile:
                 return data
 
     """ 
@@ -97,9 +97,9 @@ class CoreDumpAnalysis:
         Response: The response contains the resultID on successful analysis, ontherwise contains the path to erros.log file, which
                     contains the errors, as they are logged.
     """
-    def analyze(self,argv,callByCMD):
+    def analyze(self,argv,projectNamePath,callByCMD):
         self.callByCMD=callByCMD
-        
+        self.Result.codeFilePath=projectNamePath
         #if call is by a CMD then extract path from arguments
         if callByCMD:
             DirectoryPath=''
@@ -108,11 +108,11 @@ class CoreDumpAnalysis:
             except getopt.GetoptError:
                 # print ('Wrong Input Format')
                 # print ('Usage: file.py -d <directory path>')
-                logErr('Wrong Input Format')
-                logErr('Usage: file.py -d <directory path>')
-                logErr('Wrong Input Format')
+                logerr('Wrong Input Format',self.Result.ResultPath)
+                logerr('Usage: file.py -d <directory path>',self.Result.ResultPath)
+                logerr('Wrong Input Format',self.Result.ResultPath)
                 sys.exit(2)
-            flg=0;
+            flg=0
             for opt,arg in opts:
                 if opt=='-d':
                     flg=1
@@ -120,43 +120,47 @@ class CoreDumpAnalysis:
             if flg==0:
                 # print('Directory path not  specified')
                 # print ('Usage: file.py -d <directory path>')
-                logErr('Directory path not  specified')
+                logerr('Directory path not  specified',self.Result.ResultPath)
                 sys.exit(2)
         else:
             #We already have the direcotry path in this case
             DirectoryPath=argv
-
         #validate the directory path    
         if os.path.exists(DirectoryPath) and os.path.isdir(DirectoryPath):
             #get directory's structure
             directory= self.Get_Dir_Structure(DirectoryPath)
             if(directory==None):
                 # print("Invalid Directory Structure")
-                logErr("Invalid Directory Structure")
-                sys.exit(2) 
+                logerr("Invalid Directory Structure",self.Result.ResultPath)
+                sys.exit(2)   
             coredump=self.generateCoreDumpFileInfo(directory['CoreFilePath'])
 
             #Store the necessary info about input files
             self.Result.directoryInfo=directory
             self.Result.directoryPath=DirectoryPath
             self.Result.coreDumpInfo=coredump
-
+            
+ 
             """After uploads and validations we start the analysis work"""
 
             #Gives us the path of the executable file from summary.txt
-            logConsole('Extracting Main Exectuable...\n')
-            # print('\nExtracting Main Exectuable...')
+            logconsole('Extracting Main Exectuable...\n',self.Result.ResultPath)
+            #print('\nExtracting Main Exectuable...')
             GetMainExecutable().Analyze(self.Result)
 
             #Retrieving of shared libraries 
-            logConsole('Retrieving Shared Libraries...\n')
-            # print('\nRetrieving Shared Libraries...')
+            logconsole('Retrieving Shared Libraries...\n',self.Result.ResultPath)
+            #print('\nRetrieving Shared Libraries...')
             SharedLibAnalyzer().Analyze(self.Result)
 
             #Getting information about the threads and stacktraces
-            logConsole('Unwiding Stacktraces...\n')
+            logconsole('Unwiding Stacktraces...\n',self.Result.ResultPath)
             # print('\nUnwiding Stacktraces...')
             UnwindAnalyzer().Analyze(self.Result)
+            
+            #Getting Error Line from the code 
+            logconsole('Getting Code...\n',self.Result.ResultPath)
+            GetCode().analyze(self.Result)
 
             
             #Convert the result in JSON format
@@ -170,26 +174,26 @@ class CoreDumpAnalysis:
             if not callByCMD:
                 return self.Result.ResultID, 201
             else:
-                logConsole("Analysis Complete...")
-                logConsole("Result is stored at "+self.Result.ResultPath)
+                logconsole("Analysis Complete...",self.Result.ResultPath)
+                logconsole("Result is stored at "+self.Result.ResultPath,self.Result.ResultPath)
                 if callByCMD:
                     print("Analysis Complete...")
                     print("Result is stored at "+self.Result.ResultPath)
             
         else:
-            logErr('Invalid Directory Path')
+            logerr('Invalid Directory Path',self.Result.ResultPath)
             print ('Invalid Directory Path')
             sys.exit(2)
 
 
 
-if __name__ == "__main__":
-    CoreDumpAnalyzerObj=CoreDumpAnalysis()
-    try:
-        CoreDumpAnalyzerObj.analyze(sys.argv[1:],True)
-    except SystemExit:
-        logConsole("Some Error Occurred, Exiting...")
-        resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
-        print("Logs can be viewed at :",resultPath)
+# if __name__ == "__main__":
+#     CoreDumpAnalyzerObj=CoreDumpAnalysis()
+#     try:
+#         CoreDumpAnalyzerObj.analyze(sys.argv[1:],True)
+#     except SystemExit:
+#         logconsole("Some Error Occurred, Exiting...",CoreDumpAnalysis.Result.ResultPath)
+#         resultId,resultPath=CoreDumpAnalyzerObj.getResultIdandPath()
+#         print("Logs can be viewed at :",resultPath)
 
 

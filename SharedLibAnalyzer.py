@@ -1,5 +1,5 @@
-from ConsoleLogs import logConsole
-from WarningLog import logWarning
+from Logs import getWarningLogger,getConsoleLogger,logconsole,getErrLogger,logerr,logwarning
+
 import re
 import subprocess
 import sys
@@ -8,8 +8,6 @@ from pprint import pprint
 
 from CD_Module import CD_Module
 from config import SYS_ROOT
-
-from ErrorLog import logErr
 
 GDBLibraryRegex= r"0x([\da-f]+)\s+0x([\da-f]+)\s+\w*\s+(?:\(\*\)\s+)?(.*)"
 ReadELFSectionRegex= r"\.\w+\s*PROGBITS\s*([\da-f]+)\s*([\da-f]+)"
@@ -22,19 +20,19 @@ process during crash"""
 
 class SharedLibAnalyzer:
     def __init__(self) -> None:
+        self.Result=None
         pass
 
 
 
     """This function will parse the information from GDB output"""
     def AnalyzeGDBoutput(self,gdbOutput,gdbErr,Result):
-
         #  Check for GDB error
         if len(gdbErr) != 0:
-            logErr('Error while analyzing GDB')
+            logerr('Error while analyzing GDB',Result.ResultPath)
             flg=0
             for errs in gdbErr:
-                logErr(errs)
+                logerr(errs,Result.ResultPath)
                 
 
         #  Extract GDB modules
@@ -46,7 +44,7 @@ class SharedLibAnalyzer:
                 startAddr = x.group(1)
                 endAddr = x.group(2)
                 library = x.group(3)
-                logConsole('Shared Library: 0x'+startAddr+' - 0x'+endAddr+': '+library)
+                logconsole('Shared Library: 0x'+startAddr+' - 0x'+endAddr+': '+library,Result.ResultPath)
                 
                 module = CD_Module()
                 StartAddr = int(startAddr,16)
@@ -55,7 +53,7 @@ class SharedLibAnalyzer:
                 FileName = os.path.basename(library)
                 LocalPath = os.path.join(SharedLibPath,FileName)
                 if not os.path.isfile(LocalPath):
-                    logWarning(str('Module'+FilePath+' is not found in local shared library folder'))
+                    logwarning(str('Module'+FilePath+' is not found in local shared library folder'),self.Result.ResultPath)
                     LocalPath="Not Found Locally"
                 FileSize = os.path.getsize(library)
                 module.generateModule(StartAddr,EndAddr,FilePath,FileName,LocalPath,FileSize)
@@ -90,7 +88,7 @@ class SharedLibAnalyzer:
                     if line:
                         line=line.decode()
                         if re.match("warning:",line):
-                            logWarning(line)
+                            logwarning(line,self.Result.ResultPath)
                             continue
                         err.append(line)
                     else:
@@ -111,14 +109,12 @@ class SharedLibAnalyzer:
 
         return
 
-
-
-    """ We use the "info sharedlibrary"  command
+    def InputGDBCommands(self,p1,Result):
+        """ We use the "info sharedlibrary"  command
         the command is build in GDB
         gives information about the shared libraries 
         loaded in core file.
-    """
-    def InputGDBCommands(self,p1,Result):
+        """
         p1.stdin.write(('set sysroot '+SYS_ROOT+'\n').encode())
         p1.stdin.write(('set solib-search-path '+Result.directoryInfo["SharedLibPath"]+' \n').encode())
         p1.stdin.write(('file "'+Result.ExecutablePath+'"\n').encode())
@@ -152,7 +148,7 @@ class SharedLibAnalyzer:
                 if curline.strip()=="":
                     continue
                 if re.match("warning:",curline):
-                    logWarning(curline)
+                    logwarning(curline,self.Result.ResultPath)
                     continue
                 gdbErr.append(curline)
             else:
@@ -177,6 +173,7 @@ class SharedLibAnalyzer:
     """
 
     def Analyze(self,Result):
+        self.Result=Result
         #Open the subproecess to call GDB from it
         p1=subprocess.Popen(["gdb-multiarch"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         
@@ -187,7 +184,7 @@ class SharedLibAnalyzer:
         gdbOutput , gdbErr=self.ReadGDBOutput(p1)
         
         #Analyse the output to parse the modules' information
-        logConsole('Analysing GDB output...')
+        logconsole('Analysing GDB output...',Result.ResultPath)
         self.AnalyzeGDBoutput(gdbOutput,gdbErr,Result)
         
 

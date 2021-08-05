@@ -4,7 +4,7 @@ from collections import Counter
 
 class ClusteringUtil:
     """ 
-    This class is the utility created for the both types of clusters i.e. ClusterOfCoredumps and ClusterofErrors class 
+    This class is the utility created for ClusterOfCoredumps class 
     It stores the
     N: signifies the number of dataset values the object has
     doc_freq:list having the frequency of all the functions present in the object
@@ -23,28 +23,13 @@ class ClusteringUtil:
         self.doc_freq=[]
         pass
     
-    def remove_equals(self,words):
-        """ This function removes the same adjacent stack frames that are same 
-        (Basically used for removing the recursions present in the stack frame)
-        Parameters:
-        words (list) : stackframes list having the adjacent same values(Recursion)
-        
-        Returns:
-        list: returns list having no adjacent same values present in the stack frame
-        
-        """
-        res = []
-        for i, w in enumerate(words):
-            if (i == 0 or words[i - 1] != w) and w.strip() != '':
-                res.append(w)
-        return res
+    
 
     
 
     def transform(self,words):
         """ This function gives the tf and idf value to each frame present in
         the words and returns the dict with frame name as key and value as tf,idf
-
         words (list) : stackframes list for which tf-idf value is required
         
         Returns:
@@ -87,20 +72,17 @@ class ClusteringUtil:
           break
         temp.append(s[i])
       return temp
-
+  
     
+
     def weights(self,coded_seq, alpha: float, beta: float, gamma: float):
         """ This function returns the weights given to each frame in coded_seq based 
         upon tf-idf concept. Here tf is refered as local weight which is calculated as:
           
           1/(1+i)^alpha where i refers to index of frame in the coded_seq
-
           and idf is global weight which is calculated as 
-
           1/(1+e^(-beta*(frequency of given frame in training dataset) -gamma)))
-
        Paramteres:
-
         coded_seq (list) : stackframes list for which tf-weights value is required
         alpha (float), beta (float), gamma (float):hyperparameters are used to tune smooth filtering
         

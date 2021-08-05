@@ -1,4 +1,8 @@
+from pickle import GLOBAL
+from posixpath import split
+import re
 from flask import jsonify
+from werkzeug.utils import send_from_directory
 from UploadFilesAndAnalyse import UploadFilesAndAnalyse
 import os
 import json
@@ -9,15 +13,18 @@ from flask_cors import CORS
 from flask_restful import reqparse, abort, Api, Resource
 from Main import CoreDumpAnalysis
 import threading
-from config import RESULT_FOLDER
+from config import CodeDir, RESULT_FOLDER,UPLOAD_FOLDER,ScriptDir
+from predict import predict
+from update import update
+from glob import glob
+from zipfile import ZipFile
+
+
 from ClusterofErrors import ClusterOfErrors
 from ClusterOfCoredumps import ClusterOfCoredumps
 from ClusteringUtil import ClusteringUtil
 from ML_Model import ML_Model
-from levenshtein_distUtil import calculate_dist
-from predict import predict
-from update import update
-from zipfile import ZipFile
+from MLUtility import calculateLevenshteinDist,distDiff,getErrorStr,remove_equals
 
 WriteLocks={}
 ReadLocks={}
@@ -107,13 +114,133 @@ class CoreDumps(Resource):
         response.status_code=200
         return response
 
+
+"""This API is for getting the code file so """
+class CodeFile(Resource):
+    def read(self,path):
+        """
+        This function is for reading the file
+        Parametres:
+        path: The path of file to be read
+        Return:
+        string: complete read file 
+        """
+        file1 = open(path,"r") 
+        return file1.read()
+
+    def get(self):
+        """ 
+        Handles the get request
+        URL: /codefile
+        data: {resultId,path}
+
+        Response: (201)=> {data:fileData}
+                  (400)=> {message: Invalid Args}
+                  (409)=> {message: Errors}
+
+    """
+        try: 
+            
+            filePath=request.args.get('path')
+            resultId=request.args.get('resultId')
+
+            #checking if for this analysis is done or not
+            if not os.path.exists(RESULT_FOLDER+resultId+'/Results.txt'):
+                response=jsonify({"message":"Result Not found "})
+                response.status_code=400
+                return response
+
+            #reading result because to verify that the files related to the resultId are read only
+            with open(RESULT_FOLDER+resultId+'/Results.txt', 'r') as file:
+                data=json.load(file)
+                projectName=data['codeFilePath']
+           
+            #TODO here some kind of verification could be done for the access of the file    
+
+            if filePath.find(projectName)>=0:
+                return self.read(filePath)
+            else:
+                response=jsonify({"message":"Do not have permission "})
+                response.status_code=400
+                return response
+        except:
+            response=jsonify({"message":"Error Occured "})
+            response.status_code=409
+            return response
+
+
+    def post(self):
+        """ 
+        Handles the POST request
+        URL: /codefile
+         data: {resultId,path,fileText}
+         
+
+        Response: (201)=> {data:Success}
+                  (400)=> {message: Invalid Args}
+                  (409)=> {message: Errors}
+
+        """
+        try: 
+            data=request.get_json()
+            new_fileData=data['fileText']
+            old_fileData=""
+            filePath=data['path']
+            fileName=filePath.split('/')[-1]  
+            resultId=data['resultId']
+            if not os.path.exists(RESULT_FOLDER+resultId+'/Results.txt'):
+                response=jsonify({"message":"Result Not found "})
+                response.status_code=400
+                return response
+            with open(RESULT_FOLDER+resultId+'/Results.txt', 'r') as file:
+                data=json.load(file)
+                projectName=data['codeFilePath']
+                
+            if filePath.find(projectName)>=0:
+                old_fileData=self.read(filePath)
+            else:
+                response=jsonify({"message":"Do not have permission "})
+                response.status_code=400
+                return response
+
+            #Added the old and new file data so that its difference 
+            # could be shown as suggestionin the resultId/Suggestion.txt
+            with open(RESULT_FOLDER+resultId+"/Suggestions.txt",'r') as file: 
+                    result=json.load(file)
+                    suggestion_arr=result["suggestions"]
+                    if len(suggestion_arr)==0:
+                        update(resultId)
+                        print("updated")
+                    suggestion={}
+                    
+                    suggestion['old']=old_fileData
+                    suggestion['new']=new_fileData    
+                    suggestion_arr[fileName]=suggestion
+                    result["suggestions"]=suggestion_arr
+                    if result: 
+                        with open(RESULT_FOLDER+resultId+"/Suggestions.txt",'w') as file:
+                            json_result=json.dumps(result,default=lambda o: o.__dict__, indent=4)
+                            file.write(json_result)
+                        response=jsonify({})
+                        response.status_code=201
+           
+            return "SUCCESS"
+        except:
+            response=jsonify({"message":"Error Occured "})
+            response.status_code=400
+            return response
+        
+
+    
+
+
 """ This class API is responsible of handling the Analysis request"""
 class StartAnalysis(Resource):
 
     """ 
         Handles the POST request
         URL: /analyse
-        data: {corefilePath,executablePath,sharedlib}
+        data: {corefilePath,executablePath,sharedlib,projectName}
 
         Response: (201)=> {data:resultID}
                   (400)=> {message: Invalid Args}
@@ -155,17 +282,21 @@ class StartAnalysis(Resource):
             """
         
             #get all files
+            
             corefilePath=data['corefilePath']
             executablePath=data['executablePath']
             sharedLibZip=data['sharedlib']
+            projectName="@#abcdefghijklmnopqrstuvwxyz"
+            if 'projectName' in data:
+                projectName=data['projectName']
+            
 
             #check for all files
             bool1= os.path.isfile(corefilePath)
             bool2= os.path.isfile(executablePath)
             bool3= os.path.isfile(sharedLibZip)
 
-
-            if not bool1 or not bool2 or not bool3:
+            if not bool1 or not bool2 or not bool3 :
                 response=jsonify({"message":"Invalid Arguments"})
                 response.status_code=400
                 return response
@@ -174,15 +305,21 @@ class StartAnalysis(Resource):
             tmpDirPath=tempfile.mkdtemp()
             tmpcorefilePath=tmpDirPath+'/corefile.core'
             tmpSummaryfilePath=tmpDirPath+'/summary.txt'
+            projectPath=CodeDir+projectName
+
+            # if not os.path.isdir(projectPath):
+            #     response=jsonify({"message":"Code Project Not Found"})
+            #     response.status_code=400
+            #     return response
 
             #store core file path
             shutil.copyfile(corefilePath,tmpcorefilePath)
+
 
             #create summary.txt file path
             summaryfile=open(tmpSummaryfilePath,'w')
             summaryfile.write("executablePath: "+executablePath+'\n')
             summaryfile.close()
-
             #unzip and store shared libraries
             with ZipFile(sharedLibZip, 'r') as zipObj:
                 for fileinfo in zipObj.infolist():
@@ -196,12 +333,11 @@ class StartAnalysis(Resource):
                             new_path+=fileinfo.filename[i]
                     fileinfo.filename=new_path
                     zipObj.extract(fileinfo,tmpDirPath)
-
             # Start the Analysis...           
             CoreDumpAnalyzerObj=CoreDumpAnalysis()
             try:
-                resp, status= CoreDumpAnalyzerObj.analyze(tmpDirPath,False)
-                response=jsonify({"resultID":resp})
+                resp, status= CoreDumpAnalyzerObj.analyze(tmpDirPath,projectPath,False)
+                response=jsonify({"resultID":resp}) 
                 response.status_code=status
                 return response
             except:
@@ -209,9 +345,11 @@ class StartAnalysis(Resource):
                 response=jsonify({"message":"Error Occurred","log":resultId+'/errors.log'})
                 response.status_code=409
                 return response
+            
             finally:
                 shutil.rmtree(tmpDirPath)
-
+            
+            
 """
     This class APIs helps us in interacting 
     with the ML model and dataset
@@ -226,7 +364,7 @@ class Suggest(Resource):
         Handles GET request
 
         URL: /suggest?id=resultID
-        Response: (200)=> {Results: containing 5 arrays, which are the suggestions present in top 5 similar results} 
+        Response: (200)=> {Results: containing 5 maps, which are the suggestions present in top 5 similar results} 
     """
     def get(self):
         try:
@@ -236,15 +374,16 @@ class Suggest(Resource):
                 StackTrace=""
                 lastThreadId=int(result["LastEvent"]["ThreadID"])
                 error_number=int(result['LastEvent']['SignalNumber'])
+                errorCode=result['errorLine']
                 result=result["Threads"][lastThreadId-1]["StackFrames"]
-          
+                
                 for frame in result:
                     if not frame["Info"]["Function"]:
                         continue
                     if(len(StackTrace)>0):
                         StackTrace+=" "
                     StackTrace+=frame["Info"]["Function"] 
-                data={"StackFrames":StackTrace,'SignalNumber':error_number}
+                data={"StackFrames":StackTrace,'SignalNumber':error_number,'ErrorCode':errorCode}
                 #We call the predict function of ML_Model with input as results data
                 ans=predict(data)
                 returning_val=[]
@@ -254,7 +393,7 @@ class Suggest(Resource):
                             st= json.load(file)
                             temp_arr.append(re)
                             temp_arr.append(st['suggestions'])
-                            returning_val.append(temp_arr)            
+                            returning_val.append(temp_arr) 
 
                 response=jsonify({"Results":returning_val})
                 response.status_code=200
@@ -278,7 +417,6 @@ class Suggest(Resource):
             data=request.get_json(force=True)
             resultID=None
             suggestion=None
-            print(data)
             if "id" in data:
                 resultID=str(data["id"])
             if "suggestion" in data:
@@ -293,18 +431,21 @@ class Suggest(Resource):
             while True:
                 #Wait to acquire the write lock before writing new suggestion
                 lock.acquire()
-
                 #critical section
                 result={}
                 with open(RESULT_FOLDER+resultID+"/Suggestions.txt",'r') as file: 
                     result=json.load(file)
-                    suggestion_arr=result["suggestions"]
-                    print(len(suggestion_arr))
-                    if len(suggestion_arr)==0:
-                        update(resultID)
-                        print("updated")
+                    suggestion_arr=[]
+                    try:
+                        suggest=result["suggestions"]
+                        if len(suggest)==0:
+                            update(resultID)
+                            print("updated")
+                        suggestion_arr=suggest["manually"]             
+                    except:
+                        pass    
                     suggestion_arr.append(suggestion)
-                    result["suggestions"]=suggestion_arr
+                    result["suggestions"]["manually"]=suggestion_arr
                 if result: 
                     with open(RESULT_FOLDER+resultID+"/Suggestions.txt",'w') as file:
                         json_result=json.dumps(result,default=lambda o: o.__dict__, indent=4)
@@ -364,7 +505,6 @@ class Show_Suggestion(Resource):
             with open(RESULT_FOLDER+str(resultId)+"/Suggestions.txt",'r') as file:
                 result= json.load(file)
                 suggestions=result["suggestions"]
-                print(len(suggestions),"/n")
                 response=jsonify({"suggestions":suggestions})
                 response.status_code=200
                 
@@ -387,6 +527,7 @@ class Show_Suggestion(Resource):
                 WriteLocks[resultId].release()
             ReadLocks[resultId].release()
             return response
+              
 
 
 class OK_TEST(Resource):
@@ -413,6 +554,9 @@ api.add_resource(Suggest, '/suggest')
 
 #Shows the suggestions given by users using ResultID
 api.add_resource(Show_Suggestion,'/showSuggestion')
+
+#Shows the code file present at given address
+api.add_resource(CodeFile,'/codefile')
 
 #Handles the uploading of files on server for analysis
 api.add_resource(UploadFilesAndAnalyse,'/uploadfiles')

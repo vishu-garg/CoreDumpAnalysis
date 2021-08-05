@@ -1,5 +1,4 @@
-from WarningLog import logWarning
-from ConsoleLogs import logConsole
+from Logs import getWarningLogger,getConsoleLogger,logconsole,getErrLogger,logerr,logwarning
 from os import system
 from re import sub
 import re
@@ -7,7 +6,7 @@ import sys
 from pprint import pprint
 import subprocess
 
-from ErrorLog import logErr
+
 from SystemContext import SystemContext
 from StackFrame import StackFrame
 from Thread import Thread
@@ -20,11 +19,13 @@ addrToStringRegex=r'.*:\s+"(.+)"'
 # threadInfoRegex=r"(\*)?\s+(\d+)\s+Thread\s+0x[\da-f]+\s+\(LWP\s+(\d+)\).*"
 threadInfoRegex=r"(\*)?\s+(\d+)\s+(?:Thread\s+0x[a-f\d]+\s+)?\(?LWP\s+(\d+)\)?\s+.*"
 registerValRegex=r".*\s*\$(\d+)\s+=\s+.*\s?0?x?[a-f\d]+.*"
-MAX_FRAMES=30
+
+MAX_FRAMES=32
 
 class UnwindAnalyzer :
     def __init__(self) -> None:
         self.systemContext = SystemContext()
+        self.Result=None
         pass
 
     """
@@ -103,16 +104,16 @@ class UnwindAnalyzer :
                 if line.strip()=="":
                     continue
                 if re.match("warning:",line):
-                    logWarning(line)
+                    logwarning(line,self.Result.ResultPath)
                     continue
                 if line.count("raise.c")>0 or line.count("No such file or directory")>0:
                     continue;
                 err.append(line)
 
         if len(err)>0:
-            logErr("Error while getting AUXV fields information at address: "+addr+"\n")
+            logerr("Error while getting AUXV fields information at address: "+addr+"\n",self.Result.ResultPath)
             for er in err:
-                logErr(er)
+                logerr(er,self.Result.ResultPath)
 
         #reading output
         output=None
@@ -283,7 +284,7 @@ class UnwindAnalyzer :
                 except:
                     pass
                 else:
-                    if line.count("---BackTracingThreadEnd---")>0 or flg==2 or cnt>=32:
+                    if line.count("---BackTracingThreadEnd---")>0 or flg==2 or cnt>=MAX_FRAMES:
                         p1.terminate()
                         flg=2
                         break
@@ -337,8 +338,9 @@ class UnwindAnalyzer :
         #read output
         while True:
             line= p1.stdout.readline()
+            # print(line)
             if not line:
-                break;
+                break
             try:
                 line=line.decode()
             except:
@@ -401,16 +403,16 @@ class UnwindAnalyzer :
                 if line.strip()=="":
                     continue
                 if re.match("warning:",line):
-                    logWarning(line)
+                    logwarning(line,self.Result.ResultPath)
                     continue
                 if line.count("raise.c")>0 or line.count("No such file or directory")>0:
                     break
                 err.append(line)
 
         if len(err)>0:
-            logErr("Error extracting Stacktrace....")
+            logerr("Error extracting Stacktrace....",self.Result.ResultPath)
             for er in err:
-                logErr(er)
+                logerr(er,self.Result.ResultPath)
 
         flg=0
         output=""
@@ -441,6 +443,9 @@ class UnwindAnalyzer :
 
                         StackFrames[cnt].Info["Line"]=LineNum
                         StackFrames[cnt].Info["File"]=FileName
+                        if(FunctionName.find("+")>=0):
+                            FunctionName=FunctionName.split('+')
+                            FunctionName=FunctionName[0]
                         StackFrames[cnt].Info["Function"]=FunctionName
 
                     output=""
@@ -481,6 +486,7 @@ class UnwindAnalyzer :
         4) Last Event Analysis
     """
     def Analyze(self,Result):
+        self.Result=Result
 
         #set file paths needed during analysis
         self.coreFilePath=Result.coreDumpInfo['FilePath']
@@ -494,13 +500,13 @@ class UnwindAnalyzer :
         numThreads, ThreadIdsandPIDs, activeThreadId, activeThreadPID=self.getThreads()
 
         # print("Found ",numThreads," threads....")
-        logConsole("Found "+str(numThreads)+" threads....")
+        logconsole("Found "+str(numThreads)+" threads....",Result.ResultPath)
         
         #Store the info about the threads
         Threads=[]
         for threadId,threadPID in ThreadIdsandPIDs:
             print("Analyzing Thread No.",threadId)
-            logConsole("Analyzing Thread No."+str(threadId))
+            logconsole("Analyzing Thread No."+str(threadId),Result.ResultPath)
             stackTraces= self.UnwindCurrentThread(threadId)
             thread = Thread()
             thread.Id=threadId
@@ -511,9 +517,9 @@ class UnwindAnalyzer :
 
         # Analyze Last Event
         print("Analyzing Last Event...")
-        logConsole("Analyzing Last Event...")
+        logconsole("Analyzing Last Event...",Result.ResultPath)
         lastEvent=LastEventAnalyzer()
-        lastEvent.AnalyzeLastEvent(self.coreFilePath,self.executablePath,self.SharedLibPath,activeThreadId,activeThreadPID)
+        lastEvent.AnalyzeLastEvent(self.coreFilePath,self.executablePath,self.SharedLibPath,activeThreadId,activeThreadPID,Result)
         Result.LastEvent=lastEvent
         
 

@@ -54,7 +54,7 @@ class UploadFilesAndAnalyse(Resource):
     """
 
     
-    def analyseFiles(self,corefilePath,executablePath,sharedLibpath):
+    def analyseFiles(self,corefilePath,executablePath,sharedLibpath,projectName):
         url=BaseUrl
         executablePath=os.path.abspath(executablePath)
         resp = requests.post(
@@ -62,7 +62,8 @@ class UploadFilesAndAnalyse(Resource):
             json={
             'corefilePath':corefilePath,
             'executablePath':executablePath,
-            'sharedlib':sharedLibpath
+            'sharedlib':sharedLibpath,
+            'projectName':projectName
             }
         )
         response=jsonify(resp.json())
@@ -85,8 +86,20 @@ class UploadFilesAndAnalyse(Resource):
 
         if not os.path.isdir(UPLOAD_FOLDER):
             os.mkdir(UPLOAD_FOLDER)
-
-
+        
+       # print(request.form['email'])
+       # print(request.form['identifier'])
+       
+       #just putting random value which can't be project name
+        projectName="@#*abcdefghijklmnopqrstuvwxyz"
+        try:
+            temp=request.form['projectName']
+            if(temp!=""):
+                projectName=temp
+            print(projectName)
+        except:
+            pass    
+        # print("here",projectName)
         # check if the required files  are present
         if 'corefile' not in request.files:
             resp = jsonify({'message' : 'No corefile in the request'})
@@ -124,9 +137,8 @@ class UploadFilesAndAnalyse(Resource):
         sharedLibPath=ScriptDir+'/Uploads/'+resp.json['uploadedFileName']
 
 
-
         #The files are ready to be analysed
-        response = self.analyseFiles(corefilePath,executablePath,sharedLibPath)
+        response = self.analyseFiles(corefilePath,executablePath,sharedLibPath,projectName)
 
 
 

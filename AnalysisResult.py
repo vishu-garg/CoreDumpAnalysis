@@ -20,6 +20,9 @@ class Result:
         self.Threads=[Thread()]
         self.LastEvent=LastEventAnalyzer()
         self.creationDate=datetime.datetime.now().isoformat()
+        self.errorLine="Error Line Not Available"
+        self.codeFilePath=None
+        self.codeSnippet="No Code Snippet Available"
         # self.suggestions=[]
 
 
@@ -84,7 +87,7 @@ class Result:
 
         SuggestionFilePath=self.ResultPath+"Suggestions.txt"
         Suggestionfile= open(SuggestionFilePath,"w+")
-        Suggestionfile.write(json.dumps({"suggestions":[]},default=lambda o: o.__dict__, indent=4))
+        Suggestionfile.write(json.dumps({"suggestions":{}},default=lambda o: o.__dict__, indent=4))
         Suggestionfile.close()
 
         # print("Analysis Completed...")
