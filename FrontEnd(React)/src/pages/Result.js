@@ -7,6 +7,7 @@ import LastEvent from '../components/LastEvent'
 import SystemInfo from '../components/SystemInfo'
 import ThreadInfo from '../components/ThreadInfo'
 import ModuleInfo from '../components/ModuleInfo'
+import CodeSnippet from '../components/codeSnippet'
 
 import AddSuggestion from '../components/AddSuggestion'
 
@@ -25,7 +26,6 @@ export default function Result(props){
                     const response=await axiosInstance.get('/coredump',{params})
                     setResult(response.data)
                     setError(null)
-                    console.log(response.data)
                 }catch(err){
                     const errObj= err.response ? err.response.data : {"message":"Network Error"}
                     setError(errObj)
@@ -34,7 +34,11 @@ export default function Result(props){
             }
         fetchResult()}
     },[resultID])
-
+    
+    const findSnippet =(codeSnippet,errorLine)=>{
+        if(typeof codeSnippet !='undefined')return codeSnippet;
+        return errorLine;
+    }
 
     const showSuggestion =()=>{
         history.push({
@@ -54,11 +58,12 @@ export default function Result(props){
                             <span>Result ID: </span><span>{result.ResultID}</span>
                         </Typography>
                     </Grid>
-                    <Grid item sm={12} xs={12}><LastEvent info={result.LastEvent}/></Grid>
+                    <Grid item sm={12} xs={12}><LastEvent info={result.LastEvent} /></Grid>
+                    
+                    <Grid item sm={12} xs={12}><CodeSnippet codeLine={findSnippet(result.codeSnippet,result.errorLine)}/></Grid>
                     <Grid item sm={12} xs={12}><SystemInfo info={result.systemContext} moduleCount={result.Modules.length} threadCount={result.Threads.length}/></Grid>
-                    <Grid item sm={12} xs={12}><ThreadInfo info={result.Threads} lastThreadID={result.LastEvent.ThreadID}/></Grid>
+                    <Grid item sm={12} xs={12}><ThreadInfo info={result.Threads} codeFilePath = {result.codeFilePath} lastThreadID={result.LastEvent.ThreadID} resultId ={result.ResultID}/></Grid>
                     <Grid item sm={12} xs={12}><ModuleInfo info={result.Modules}/></Grid>
-
                 </Grid>
 
                 <Grid container justify="center" style={{marginTop:"20px"}}>
