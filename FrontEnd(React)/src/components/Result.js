@@ -23,7 +23,6 @@ export default function Result(props){
         fetchResult()}
     },[])
 
-
     return(<div>
             {resultID ? (
             <div>

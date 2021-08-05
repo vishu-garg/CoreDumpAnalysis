@@ -62,6 +62,7 @@ export default function DrawerComponent({open,setOpen}){
         <Divider />
         <List>
           {[['Home','/'], ['Analyse Core-Dump','/analyse'], ['Suggestion','/suggestion'], ['Help','/help']].map((text, index) => (
+            <Link to={text[1]}>
             <ListItem button key={text[0]}>
               <ListItemIcon>
                 {index===0 && <HomeIcon/>}
@@ -69,8 +70,9 @@ export default function DrawerComponent({open,setOpen}){
                 {index===2 && <DoneAllIcon/>}
                 {index===3 && <HelpIcon/>}
               </ListItemIcon>
-              <Link to={text[1]}><ListItemText primary={text[0]} /></Link>
+              <ListItemText primary={text[0]} />
             </ListItem>
+            </Link>
           ))}
         </List>
         <Divider />

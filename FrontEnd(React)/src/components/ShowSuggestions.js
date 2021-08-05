@@ -8,9 +8,22 @@ import AccordionDetails from '@material-ui/core/AccordionDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import SendIcon from '@material-ui/icons/Send';
 import SearchIcon from '@material-ui/icons/Search';
+import ReactDiffViewer from 'react-diff-viewer';
+import axiosInstance from '../utils/axios'
+import {Link} from "react-router-dom";
+import { Icon } from '@iconify/react';
+import externalLinkAlt from '@iconify-icons/fa-solid/external-link-alt';
 import CheckCircleOutlineIcon from '@material-ui/icons/CheckCircleOutline';
 
-import axiosInstance from '../utils/axios'
+const mapKeyValues=(obj) => {
+    const entries = Object.entries(obj);
+    // console.log(entries);
+    return entries
+}
+const convertToLink=(str)=>{
+    var temp='result?id='+(str)
+    return temp;
+  }
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -88,12 +101,13 @@ export default function ShowSuggestions(props) {
             async function fetchResult(){
                 try{
                     const response=await axiosInstance.get('/suggest',{params})
+                    // console.log(response.data.Results)
                     setResult(response.data.Results)
                     setError(null)
-                    console.log(response.data)
+                    // console.log(response.data)
                 }catch(err){
                     const errObj= err.response ? err.response.data : {"message":"Network Error"}
-                    console.log(errObj)
+                    // console.log(errObj)
                     setError(errObj)
                     setResult(null)
                 }
@@ -134,28 +148,71 @@ export default function ShowSuggestions(props) {
                     </Grid>
                     <Grid item sm={12} xs={12}>
                     {result.map((suggestion)=>{
+                        // console.log(suggestion)
                         return(
+                            
                             <Accordion>
                             <AccordionSummary
                             expandIcon={<ExpandMoreIcon />}
                             aria-controls="panel1a-content"
                             id="panel1a-header">
                             <SendIcon/>
-                            <Typography style={{marginLeft:"10px", fontWeight:"bold"}} className={classes.heading}>({suggestion[0]})</Typography>
+                            <Typography 
+                              style={{marginLeft:"10px", fontWeight:"bold"}} 
+                              className={classes.heading}>
+                                   ({suggestion[0]})
+                      
+                                  <Link target="_blank" to={convertToLink(suggestion[0])}>
+                                  <Icon icon={externalLinkAlt}  />
+                                  </Link>
+                            </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
-                            <List>{suggestion[1].map((val)=>{
-                                return (
+                            <List
+                                style={{width : "100%"}}>
+                                {
                                     <ListItem>
-                                    <ListItemIcon>
-                                        <CheckCircleOutlineIcon/>
-                                    </ListItemIcon>
                                     <ListItemText item sm={12} xs={12}>
-                                        <Typography>{val}</Typography>
+                                    {
+                                    mapKeyValues(suggestion[1]).map((entry)=>{
+                                    
+                                        return  (
+
+                                            <div style={{marginBottom : "2rem"}}>
+
+                                            {
+                                            entry[0]=="manually"?
+                                            <List>{entry[1].map((val)=>{
+                                                return (
+                                                    <ListItem>
+                                                    <ListItemIcon>
+                                                        <CheckCircleOutlineIcon/>
+                                                    </ListItemIcon>
+                                                    <ListItemText item sm={12} xs={12}>
+                                                        <Typography>{val}</Typography>
+                                                    </ListItemText>
+                                                    </ListItem>
+                                                )
+                                            })}
+                                            </List>
+                                            :
+                                            <ReactDiffViewer 
+                                                styles={{titleBlock : {
+                                                    "fontWeight" : "bold"
+                                                }}}
+                                                leftTitle={`${entry[0]} (Old file)`}
+                                                rightTitle={`${entry[0]} (Updated file)`}
+                                                extraLinesSurroundingDiff={1}
+                                                oldValue={entry[1]["old"]} newValue={entry[1]["new"]} splitView={true} showDiffOnly={true}/>
+                                            
+                                    }
+                                    </div>
+                                        )
+                                    })}
+                                   
                                     </ListItemText>
                                     </ListItem>
-                                )
-                            })}
+                    }
                             </List>
                             </AccordionDetails>
                         </Accordion>

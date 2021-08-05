@@ -21,7 +21,7 @@ const useStyles= makeStyles({
     marginBottom:"10px"}
 })
 
-export default function SystemInfo({info, lastThreadID,codeFilePath,resultId}){
+export default function mySuggestion({info, suggestions}){
 
     const [expand,setExpand]=useState(false)
     const classes = useStyles();
@@ -52,11 +52,39 @@ export default function SystemInfo({info, lastThreadID,codeFilePath,resultId}){
        {expand && (<>
        <Grid item xs={12} sm={12} component={Paper}>
          <ul>
-         {info.map((thread) => {
+         {suggestions.map((entry) => {
           
-           return(
-             <ShowThread key={thread.Id}  thread={thread} isLastThread={thread.Id===lastThreadID} codeFilePath={codeFilePath} resultId={resultId}/>
-           )
+          return  (
+
+            <div style={{marginBottom : "2rem"}}>
+
+            {
+            entry[0]=="manually"?
+            <List>{entry[1].map((val)=>{
+                return (
+                    <ListItem>
+                    <ListItemIcon>
+                        <CheckCircleOutlineIcon/>
+                    </ListItemIcon>
+                    <ListItemText item sm={12} xs={12}>
+                        <Typography>{val}</Typography>
+                    </ListItemText>
+                    </ListItem>
+                )
+            })}
+            </List>
+            :
+            <ReactDiffViewer 
+                styles={{titleBlock : {
+                    "fontWeight" : "bold"
+                }}}
+                leftTitle={`${entry[0]} (Old file)`}
+                rightTitle={`${entry[0]} (Updated file)`}
+                oldValue={entry[1]["old"]} newValue={entry[1]["new"]} splitView={true} showDiffOnly={true}/>
+            
+    }
+    </div>
+        )
          })}
          </ul>
        </Grid>

@@ -1,8 +1,9 @@
 import React from 'react'
 import {Grid,Typography,IconButton,Table,TableContainer,Paper,TableHead,TableCell,TableBody,TableRow} from "@material-ui/core"
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import {Link} from "react-router-dom";
 
-export default function ShowThread({thread, isLastThread=false}){
+export default function ShowThread({thread, isLastThread=false,codeFilePath,resultId}){
 
     const [showFrames,setShowFrames]= React.useState(false)
 
@@ -46,7 +47,15 @@ export default function ShowThread({thread, isLastThread=false}){
                                 <TableCell>{frame.BP}</TableCell>
                                 {frame.Info.Line ?
                                     (<TableCell>
-                                        At Line {frame.Info.Line} in function {frame.Info.Function} of {frame.Info.File}
+                                        {
+                                            frame.Info.File.includes(codeFilePath)?
+                                            <Link target="_blank" to={`/errorfile/${resultId}/${frame.Info.Line}/${encodeURIComponent(frame.Info.File)}`}> At Line {frame.Info.Line} in function {frame.Info.Function} of {frame.Info.File}</Link>
+                                            :
+                                            <h3> At Line {frame.Info.Line} in function {frame.Info.Function} of {frame.Info.File}</h3>
+                
+                                        }
+                                        {/* 
+                                        <Link target="_blank" to={`/errorfile/${frame.Info.Line}/${encodeURIComponent(frame.Info.File)}`}> At Line {frame.Info.Line} in function {frame.Info.Function} of {frame.Info.File}</Link> */}
                                     </TableCell>): 
                                     (<TableCell>
                                     No debug symbol found

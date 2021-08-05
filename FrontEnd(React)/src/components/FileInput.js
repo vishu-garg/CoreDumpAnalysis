@@ -5,11 +5,18 @@ import axiosInstance from '../utils/axios'
 import LinearWithValueLabel from './ProgressBar'
 import { Typography, Grid, Button } from '@material-ui/core';
 
+
 function FileInput({setResponse,setError}){
   
   const [corefile,setCorefile] = useState(null)
   const [executableFile,setExecutableFile]=useState(null)
   const [sharedlibFile,setSharedlibFile]=useState(null)
+
+  // //adding
+  // const [email,setEmail]=useState("")
+  // const [identifier,setIdentifier]=useState("")
+  const [projectName,setProjectName]=useState("")
+ //done
 
   const [progress, setProgress] = useState(0)
   const [loading,setLoading]=useState(false)
@@ -20,6 +27,10 @@ function FileInput({setResponse,setError}){
     formdata.append("corefile",corefile)
     formdata.append("exefile",executableFile)
     formdata.append("sharedlib",sharedlibFile)
+    formdata.append("projectName",projectName)
+    
+
+
     setError(null)
     setResponse(null)
     axiosInstance({
@@ -42,6 +53,14 @@ function FileInput({setResponse,setError}){
       setCorefile(null) 
       setExecutableFile(null)
       setSharedlibFile(null)
+
+      // //adding
+      // setEmail("")
+      // setIdentifier("")
+      setProjectName("")
+
+
+
       setResponse(res.resultID)  
     }).catch((err)=>{
     setLoading(false)
@@ -49,15 +68,30 @@ function FileInput({setResponse,setError}){
     setCorefile(null) 
     setExecutableFile(null)
     setSharedlibFile(null)
+
+    // //adding
+    // setEmail("")
+    // setIdentifier("")
+    setProjectName("")
+
     setError(errObj)
     })
   }
 
   return (
     <div>
+      
       Start Analysis:
-
+      
       <Grid container justify="center" spacing={2}>  
+
+        <Grid item sm xs={12}>
+          <label htmlFor="projectName">
+            Project Name
+            </label>
+            <input type="text" id="projectName" value={projectName}  onChange={(e)=>{setProjectName(e.target.value);setError(null)}}/>
+        </Grid>
+      
         
         <Grid item sm xs={12}>
           <input type="file" id="corefile" style={{display:"none"}} onChange={(e)=>{setCorefile(e.target.files[0]);setError(null)}}/>
@@ -94,10 +128,16 @@ function FileInput({setResponse,setError}){
             </Typography>
           }
         </Grid>
-        {corefile && executableFile && sharedlibFile && <Grid item sm xs={12}>
-              <Button variant="contained" color="secondary" component="span" onClick={handleUpload}>Submit</Button>
+        
+        {
+        // email &&  identifier &&  
+        // projectName && 
+        corefile && executableFile && sharedlibFile  && <Grid item sm xs={12}>
+              <Button variant="contained" color="secondary"  onClick={handleUpload}>Submit</Button>
         </Grid>}
       </Grid>
+
+
 
       {progress!==0 && progress!==100 &&
       <LinearWithValueLabel progress={progress} />
